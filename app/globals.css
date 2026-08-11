@@ -16,6 +16,28 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: Aria
 button, input, textarea { font: inherit; }
 button { color: inherit; }
 
+.login-shell { min-height: 100vh; display: grid; grid-template-columns: minmax(0, .9fr) minmax(420px, 1.1fr); background: var(--paper); }
+.login-card { padding: clamp(35px, 7vw, 100px); display: flex; flex-direction: column; justify-content: center; }
+.login-brand { display: flex; align-items: center; gap: 11px; margin-bottom: clamp(60px, 10vh, 120px); font-size: 14px; font-weight: 900; letter-spacing: .15em; }
+.login-card .eyebrow { margin-bottom: 16px; }
+.login-card h1 { margin: 0; max-width: 650px; font-size: clamp(48px, 7vw, 92px); line-height: .9; letter-spacing: -.07em; }
+.login-copy { max-width: 430px; margin: 28px 0; color: #606158; font-size: 14px; line-height: 1.6; }
+.login-card form { max-width: 430px; display: grid; gap: 10px; }
+.login-card label { font-size: 9px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
+.login-card input { width: 100%; height: 58px; border: 1px solid var(--ink); border-radius: 0; background: var(--white); padding: 0 16px; outline: 0; font-size: 18px; }
+.login-card input:focus { box-shadow: 0 0 0 3px var(--lime); }
+.login-card form button { height: 58px; border: 0; background: var(--ink); color: white; padding: 0 18px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; cursor: pointer; }
+.login-card form button:hover { color: var(--lime); }
+.login-card form button:disabled { opacity: .55; cursor: wait; }
+.login-error { margin: 0; padding: 11px 13px; background: var(--orange); font-size: 12px; font-weight: 700; }
+.login-card > small { margin-top: 22px; color: #75766e; font-size: 10px; }
+.login-visual { background: var(--ink); color: white; position: relative; overflow: hidden; display: grid; place-content: center; text-align: center; }
+.login-visual::before { content: ""; width: min(42vw, 520px); aspect-ratio: 1; border: 1px solid rgba(255,255,255,.22); border-radius: 50%; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 0 70px rgba(255,255,255,.025), 0 0 0 140px rgba(255,255,255,.018); }
+.login-visual span, .login-visual strong, .login-visual i { position: relative; z-index: 1; }
+.login-visual span { color: var(--lime); font-family: Georgia, serif; font-size: clamp(100px, 17vw, 240px); font-style: italic; line-height: .7; }
+.login-visual strong { font-size: clamp(55px, 10vw, 135px); line-height: .8; letter-spacing: -.08em; }
+.login-visual i { margin-top: 35px; font-size: 10px; font-style: normal; font-weight: 900; letter-spacing: .2em; color: rgba(255,255,255,.55); }
+
 .topbar { height: 76px; padding: 0 4vw; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; background: rgba(241, 239, 231, 0.94); backdrop-filter: blur(14px); }
 .brand { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 900; letter-spacing: .15em; }
 .brand-mark { width: 29px; height: 29px; display: grid; place-items: center; background: var(--ink); color: var(--lime); font-size: 16px; letter-spacing: 0; transform: rotate(-4deg); }
@@ -221,6 +243,12 @@ footer p, footer small { margin: 0; color: rgba(255,255,255,.52); font-size: 11p
 }
 
 @media (max-width: 700px) {
+  .login-shell { grid-template-columns: 1fr; }
+  .login-card { min-height: 100vh; padding: 35px 22px; }
+  .login-brand { margin-bottom: auto; }
+  .login-card h1 { font-size: clamp(48px, 16vw, 70px); }
+  .login-card > small { margin-top: auto; padding-top: 35px; }
+  .login-visual { display: none; }
   .topbar { height: 62px; padding: 0 20px; }
   .desktop-nav, .week-counter span { display: none; }
   .week-counter strong { font-size: 17px; }

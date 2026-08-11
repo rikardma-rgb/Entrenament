@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "entrena-progress-3dies",
+  "account_id": "164acda38a5946411df921851e1d675f",
+  "compatibility_date": "2026-08-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./worker/index.ts",
+  "assets": {
+    "directory": "dist/client",
+    "not_found_handling": "none",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "entrena-progress-db",
+      "database_id": "54d680cb-7cfc-455a-a70c-2d729d353329",
+      "migrations_dir": "drizzle"
+    }
+  ]
+}

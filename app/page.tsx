@@ -458,6 +458,13 @@ function emptyResults(routine: "A" | "B" | "C"): ExerciseResult[] {
   return routines[routine].exercises.map((exercise) => ({ exerciseId: exercise.id, weight: null, reps: exercise.sets, completed: false }));
 }
 
+async function fetchSessions(): Promise<WorkoutSession[]> {
+  const response = await fetch("/api/sessions");
+  if (!response.ok) throw new Error("No s’ha pogut carregar l’historial");
+  const data = (await response.json()) as { sessions: WorkoutSession[] };
+  return data.sessions;
+}
+
 export default function Home() {
   const [tab, setTab] = useState<TabId>("week");
   const [routine, setRoutine] = useState<RoutineId>("A");
@@ -474,10 +481,7 @@ export default function Home() {
 
   async function loadSessions() {
     try {
-      const response = await fetch("/api/sessions");
-      if (!response.ok) throw new Error("No s’ha pogut carregar l’historial");
-      const data = (await response.json()) as { sessions: WorkoutSession[] };
-      setSessions(data.sessions);
+      setSessions(await fetchSessions());
     } catch {
       setMessage("No s’ha pogut connectar amb l’historial. Torna-ho a provar.");
     } finally {
@@ -486,7 +490,20 @@ export default function Home() {
   }
 
   useEffect(() => {
-    void loadSessions();
+    let active = true;
+    void fetchSessions()
+      .then((loadedSessions) => {
+        if (active) setSessions(loadedSessions);
+      })
+      .catch(() => {
+        if (active) setMessage("No s’ha pogut connectar amb l’historial. Torna-ho a provar.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   function switchRoutine(next: RoutineId) {
@@ -770,8 +787,19 @@ export default function Home() {
       <footer><span>ENTRENA</span><p>Constància &gt; perfecció. Un entrenament cada vegada.</p><small>Les teves dades es guarden de forma privada a l’app.</small></footer>
 
       {selectedExercise && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setSelectedExercise(null)}>
-          <section className="technique-modal" role="dialog" aria-modal="true" aria-labelledby="technique-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div
+          className="modal-backdrop"
+          role="button"
+          tabIndex={0}
+          aria-label="Tancar la guia de tècnica"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelectedExercise(null);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" || event.key === "Enter" || event.key === " ") setSelectedExercise(null);
+          }}
+        >
+          <section className="technique-modal" role="dialog" aria-modal="true" aria-labelledby="technique-title">
             <button className="modal-close" onClick={() => setSelectedExercise(null)} aria-label="Tancar">×</button>
             <p className="eyebrow">GUIA DE TÈCNICA</p>
             <h2 id="technique-title">{selectedExercise.name}</h2>
