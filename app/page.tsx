@@ -219,6 +219,76 @@ const routines = {
 
 const allExercises = [...exercisesA, ...exercisesB];
 
+const alternatives: Record<string, { name: string; note: string }[]> = {
+  "goblet-squat": [
+    { name: "Sentadilla amb dues manuelles", note: "Mateix patró, amb una manuella a cada costat." },
+    { name: "Premsa de cames", note: "Opció estable si no hi ha espai lliure." },
+  ],
+  "dumbbell-bench": [
+    { name: "Press de pit en màquina", note: "Més estabilitat i ajust ràpid de la càrrega." },
+    { name: "Flexions", note: "Sense material; eleva les mans si cal reduir dificultat." },
+  ],
+  "seated-row": [
+    { name: "Rem amb manuella a una mà", note: "Recolza una mà al banc i treballa cada costat." },
+    { name: "Rem amb pit recolzat", note: "Evita impuls del tronc i manté el gest molt estable." },
+  ],
+  "dumbbell-curl": [
+    { name: "Curl en politja baixa", note: "Tensió contínua durant tot el recorregut." },
+    { name: "Curl martell", note: "Manuelles amb palmells enfrontats; molt fàcil de substituir." },
+  ],
+  "seated-calf": [
+    { name: "Bessons dempeus", note: "Fes-los en màquina o amb una manuella a la mà." },
+    { name: "Bessons a la premsa", note: "Només mou els turmells i mantén els genolls estables." },
+  ],
+  plank: [
+    { name: "Dead bug", note: "Alternativa a terra amb menys càrrega sobre les espatlles." },
+    { name: "Planxa amb genolls", note: "Mateix control del tronc amb una palanca més curta." },
+  ],
+  "pallof-press": [
+    { name: "Pallof amb banda", note: "Fixa una goma a un punt estable a l’altura del pit." },
+    { name: "Suitcase carry", note: "Camina amb una manuella en una sola mà sense inclinar-te." },
+  ],
+  "romanian-deadlift": [
+    { name: "Pes mort amb kettlebell", note: "Una sola càrrega entre les cames; gest fàcil d’aprendre." },
+    { name: "Curl femoral", note: "Alternativa en màquina per treballar isquiotibials." },
+  ],
+  "seated-shoulder-press": [
+    { name: "Press d’espatlla en màquina", note: "Trajectòria guiada i canvi de pes ràpid." },
+    { name: "Landmine press", note: "Press diagonal més amable amb algunes espatlles." },
+  ],
+  "lat-pulldown": [
+    { name: "Dominada assistida", note: "Mantén el pit alt i controla tota la baixada." },
+    { name: "Jaló amb agarre neutre", note: "Mateixa màquina amb un mànec diferent i còmode." },
+  ],
+  "triceps-pushdown": [
+    { name: "Extensió sobre el cap amb manuella", note: "Una manuella agafada amb dues mans." },
+    { name: "Flexió amb mans juntes", note: "Opció sense màquina; adapta l’alçada de les mans." },
+  ],
+  "alternating-lunge": [
+    { name: "Split squat estàtic", note: "Mateixa posició, sense alternar ni avançar." },
+    { name: "Step-up al banc", note: "Puja a un banc estable empenyent amb la cama de treball." },
+  ],
+  "standing-calf": [
+    { name: "Bessons assegut", note: "Més èmfasi al soli i molt poc espai necessari." },
+    { name: "Bessons a una cama", note: "Sense màquina; subjecta una manuella si cal càrrega." },
+  ],
+};
+
+function exerciseVisual(exercise: Exercise) {
+  const aIndex = exercisesA.findIndex((item) => item.id === exercise.id);
+  const isA = aIndex >= 0;
+  const index = isA ? aIndex : exercisesB.findIndex((item) => item.id === exercise.id);
+  const columns = isA ? 4 : 3;
+  const column = index % columns;
+  const row = Math.floor(index / columns);
+  return {
+    backgroundImage: `url("/${isA ? "exercises-a" : "exercises-b"}.png")`,
+    backgroundSize: `${columns * 100}% 200%`,
+    backgroundPosition: `${columns === 1 ? 0 : (column / (columns - 1)) * 100}% ${row * 100}%`,
+    aspectRatio: isA ? "3 / 4" : "1 / 1",
+  };
+}
+
 function localDate() {
   const now = new Date();
   const offset = now.getTimezoneOffset();
@@ -345,10 +415,17 @@ export default function Home() {
     return sessions.filter((session) => new Date(`${session.sessionDate}T12:00:00`) >= monday).length;
   }, [sessions]);
 
+  const progressSummary = useMemo(() => {
+    const tracked = progressRows.filter((row) => row.latest !== null);
+    const improved = tracked.filter((row) => row.previous !== null && Number(row.latest) > Number(row.previous)).length;
+    const atBest = tracked.filter((row) => row.previous !== null && row.latest === row.best).length;
+    return { tracked: tracked.length, improved, atBest };
+  }, [progressRows]);
+
   const activeExercises = routine === "RUN" ? [] : routines[routine].exercises;
 
   return (
-    <main>
+    <main id="top">
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Entrena, inici">
           <span className="brand-mark">E</span>
@@ -361,14 +438,6 @@ export default function Home() {
         </nav>
         <div className="week-counter"><strong>{completedThisWeek}/3</strong><span>aquesta setmana</span></div>
       </header>
-
-      <section id="top" className="hero">
-        <div>
-          <p className="eyebrow">EL TEU PLA · 3 DIES / SETMANA</p>
-          <h1>Força que<br /><em>es pot mesurar.</em></h1>
-        </div>
-        <p className="hero-copy">Registra cada quilo, revisa el teu progrés i entrena amb una tècnica sòlida. Simple, constant i teu.</p>
-      </section>
 
       <nav className="mobile-tabs" aria-label="Seccions de l’app">
         <button className={tab === "week" ? "active" : ""} onClick={() => setTab("week")}>Setmana</button>
@@ -479,39 +548,36 @@ export default function Home() {
         <section className="content-section">
           <div className="section-heading wide">
             <div><span>02</span><h2>El teu progrés</h2></div>
-            <p>Compara l’últim pes amb l’anterior. Augmenta només quan completes totes les repeticions amb bona tècnica.</p>
+            <p>Una lectura ràpida: últim pes, canvi respecte a la sessió anterior i millor marca de cada exercici.</p>
           </div>
           {loading ? <p className="empty-state">Carregant el teu historial...</p> : sessions.length === 0 ? (
             <div className="empty-state"><strong>Encara no hi ha sessions.</strong><p>Desa el primer entrenament i aquí veuràs com evoluciona cada exercici.</p></div>
           ) : (
-            <div className="progress-layout">
-              <div className="progress-table">
-                <div className="progress-head"><span>Exercici</span><span>Últim</span><span>Canvi</span><span>Millor</span></div>
-                {progressRows.map(({ exercise, latest, previous, best, values }) => {
-                  const delta = latest !== null && previous !== null ? latest - previous : null;
-                  const max = Math.max(...values.map((value) => value.weight), 1);
-                  return (
-                    <button className="progress-row" key={exercise.id} onClick={() => setSelectedExercise(exercise)}>
-                      <div><strong>{exercise.shortName}</strong><span className="mini-bars" aria-hidden="true">{values.map((value, index) => <i key={`${value.date}-${index}`} style={{ height: `${Math.max(18, (value.weight / max) * 100)}%` }} />)}</span></div>
-                      <b>{latest === null ? "—" : `${latest} kg`}</b>
-                      <span className={delta !== null && delta > 0 ? "delta up" : "delta"}>{delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta} kg`}</span>
-                      <span>{best === null ? "—" : `${best} kg`}</span>
-                    </button>
-                  );
-                })}
+            <>
+              <div className="progress-summary">
+                <div><span>Sessions</span><strong>{sessions.length}</strong><small>registrades</small></div>
+                <div><span>Exercicis</span><strong>{progressSummary.tracked}</strong><small>amb pes guardat</small></div>
+                <div className="positive"><span>Han pujat</span><strong>{progressSummary.improved}</strong><small>des de l’última sessió</small></div>
+                <div><span>En millor marca</span><strong>{progressSummary.atBest}</strong><small>ara mateix</small></div>
               </div>
-              <aside className="history-card">
-                <p className="eyebrow">ÚLTIMES SESSIONS</p>
-                <h3>Historial</h3>
-                {sessions.slice(0, 8).map((session) => (
-                  <div className="history-item" key={session.id}>
-                    <span className={`history-dot ${session.routine.toLowerCase()}`} />
-                    <div><strong>{routineLabel(session.routine)}</strong><small>{displayDate(session.sessionDate)} · {session.durationMinutes ?? "—"} min</small></div>
-                    <b>RPE {session.rpe ?? "—"}</b>
-                  </div>
-                ))}
-              </aside>
-            </div>
+              <div className="progress-layout">
+                <div className="progress-groups">
+                  <ProgressGroup title="Full Body A" day="Dimarts" accent="lime" rows={progressRows.filter((row) => exercisesA.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
+                  <ProgressGroup title="Full Body B" day="Dijous" accent="orange" rows={progressRows.filter((row) => exercisesB.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
+                </div>
+                <aside className="history-card">
+                  <p className="eyebrow">ÚLTIMES SESSIONS</p>
+                  <h3>Historial</h3>
+                  {sessions.slice(0, 8).map((session) => (
+                    <div className="history-item" key={session.id}>
+                      <span className={`history-dot ${session.routine.toLowerCase()}`} />
+                      <div><strong>{routineLabel(session.routine)}</strong><small>{displayDate(session.sessionDate)} · {session.durationMinutes ?? "—"} min</small></div>
+                      <b>RPE {session.rpe ?? "—"}</b>
+                    </div>
+                  ))}
+                </aside>
+              </div>
+            </>
           )}
         </section>
       )}
@@ -544,12 +610,19 @@ export default function Home() {
             <button className="modal-close" onClick={() => setSelectedExercise(null)} aria-label="Tancar">×</button>
             <p className="eyebrow">GUIA DE TÈCNICA</p>
             <h2 id="technique-title">{selectedExercise.name}</h2>
+            <div className="technique-visual" style={exerciseVisual(selectedExercise)} role="img" aria-label={`Il·lustració de ${selectedExercise.name}`} />
             <div className="modal-meta"><span>{selectedExercise.sets}</span><span>{selectedExercise.rest} descans</span><span>{selectedExercise.focus}</span></div>
             <div className="technique-step"><span>01</span><div><h3>Posició inicial</h3><p>{selectedExercise.setup}</p></div></div>
             <div className="technique-step"><span>02</span><div><h3>Execució</h3><p>{selectedExercise.execution}</p></div></div>
             <div className="modal-columns">
               <div><h3>Punts clau</h3><ul>{selectedExercise.cues.map((cue) => <li key={cue}>{cue}</li>)}</ul></div>
               <div className="mistakes"><h3>Evita això</h3><ul>{selectedExercise.mistakes.map((mistake) => <li key={mistake}>{mistake}</li>)}</ul></div>
+            </div>
+            <div className="alternatives-block">
+              <div><p className="eyebrow">SI ESTÀ OCUPAT</p><h3>Alternatives equivalents</h3></div>
+              <div className="alternatives-grid">{alternatives[selectedExercise.id].map((alternative, index) => (
+                <div key={alternative.name}><span>0{index + 1}</span><strong>{alternative.name}</strong><p>{alternative.note}</p></div>
+              ))}</div>
             </div>
             <button className="modal-done" onClick={() => setSelectedExercise(null)}>Entès, a entrenar</button>
           </section>
@@ -562,9 +635,39 @@ export default function Home() {
 function ExerciseGuideCard({ exercise, index, onOpen }: { exercise: Exercise; index: number; onOpen: (exercise: Exercise) => void }) {
   return (
     <button className="guide-card" onClick={() => onOpen(exercise)}>
-      <span>{String(index).padStart(2, "0")}</span>
-      <div><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.focus}</small></div>
+      <span className="guide-thumb" style={exerciseVisual(exercise)}><i>{String(index).padStart(2, "0")}</i></span>
+      <div className="guide-card-copy"><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.focus}</small><em>2 alternatives disponibles</em></div>
       <b>Veure tècnica →</b>
     </button>
+  );
+}
+
+type ProgressRow = { exercise: Exercise; latest: number | null; previous: number | null; best: number | null; values: { weight: number; date: string }[] };
+
+function ProgressGroup({ title, day, accent, rows, onOpen }: { title: string; day: string; accent: "lime" | "orange"; rows: ProgressRow[]; onOpen: (exercise: Exercise) => void }) {
+  return (
+    <section className="progress-group">
+      <div className="progress-group-title"><span className={`dot ${accent}`} /><div><strong>{title}</strong><small>{day}</small></div></div>
+      <div className="progress-cards">
+        {rows.map(({ exercise, latest, previous, best, values }) => {
+          const delta = latest !== null && previous !== null ? latest - previous : null;
+          const max = Math.max(...values.map((value) => value.weight), 1);
+          return (
+            <button className="progress-card" key={exercise.id} onClick={() => onOpen(exercise)}>
+              <div className="progress-card-top"><strong>{exercise.shortName}</strong><span>{exercise.sets}</span></div>
+              <div className="progress-number"><strong>{latest ?? "—"}</strong><span>{latest === null ? "sense registre" : "kg · últim pes"}</span></div>
+              <div className="progress-compare">
+                <span>Anterior <b>{previous === null ? "—" : `${previous} kg`}</b></span>
+                <span>Canvi <b className={delta !== null && delta > 0 ? "up" : delta !== null && delta < 0 ? "down" : ""}>{delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta} kg`}</b></span>
+                <span>Millor <b>{best === null ? "—" : `${best} kg`}</b></span>
+              </div>
+              <div className="clear-trend" aria-label="Evolució de les últimes sessions">
+                {values.length ? values.map((value, index) => <i key={`${value.date}-${index}`} title={`${displayDate(value.date)}: ${value.weight} kg`} style={{ height: `${Math.max(12, (value.weight / max) * 100)}%` }} />) : <span>Desa una sessió per començar el gràfic</span>}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
