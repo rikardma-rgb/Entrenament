@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
-type RoutineId = "A" | "B" | "RUN";
+type RoutineId = "A" | "B" | "C" | "RUN";
 type TabId = "week" | "progress" | "guide";
 
 type Exercise = {
@@ -212,9 +212,12 @@ const exercisesB: Exercise[] = [
   },
 ];
 
+const exercisesC = [exercisesA[0], exercisesA[1], exercisesA[2], exercisesB[0], exercisesA[5]];
+
 const routines = {
   A: { label: "Full Body A", day: "Dimarts", accent: "lime", exercises: exercisesA },
   B: { label: "Full Body B", day: "Dijous", accent: "orange", exercises: exercisesB },
+  C: { label: "Express", day: "Opcional", accent: "express", exercises: exercisesC },
 };
 
 const allExercises = [...exercisesA, ...exercisesB];
@@ -300,10 +303,10 @@ function displayDate(date: string) {
 }
 
 function routineLabel(id: RoutineId) {
-  return id === "RUN" ? "Running suau" : routines[id].label;
+  return id === "RUN" ? "Running lliure" : routines[id].label;
 }
 
-function emptyResults(routine: "A" | "B"): ExerciseResult[] {
+function emptyResults(routine: "A" | "B" | "C"): ExerciseResult[] {
   return routines[routine].exercises.map((exercise) => ({ exerciseId: exercise.id, weight: null, reps: exercise.sets, completed: false }));
 }
 
@@ -343,13 +346,13 @@ export default function Home() {
     setMessage("");
     setNotes("");
     if (next === "RUN") {
-      setDuration("40");
-      setRpe("4");
+      setDuration("65");
+      setRpe("5");
       setResults([]);
       return;
     }
-    setDuration("35");
-    setRpe("6");
+    setDuration(next === "C" ? "30" : "35");
+    setRpe(next === "C" ? "7" : "6");
     const previous = sessions.find((session) => session.routine === next);
     setResults(
       emptyResults(next).map((result) => {
@@ -406,13 +409,17 @@ export default function Home() {
       });
   }, [sessions]);
 
-  const completedThisWeek = useMemo(() => {
+  const weeklyProgress = useMemo(() => {
     const now = new Date();
     const monday = new Date(now);
     const day = (now.getDay() + 6) % 7;
     monday.setDate(now.getDate() - day);
     monday.setHours(0, 0, 0, 0);
-    return sessions.filter((session) => new Date(`${session.sessionDate}T12:00:00`) >= monday).length;
+    const thisWeek = sessions.filter((session) => new Date(`${session.sessionDate}T12:00:00`) >= monday);
+    return {
+      base: thisWeek.filter((session) => session.routine !== "C").length,
+      express: thisWeek.filter((session) => session.routine === "C").length,
+    };
   }, [sessions]);
 
   const progressSummary = useMemo(() => {
@@ -436,7 +443,7 @@ export default function Home() {
           <button className={tab === "progress" ? "active" : ""} onClick={() => setTab("progress")}>Progrés</button>
           <button className={tab === "guide" ? "active" : ""} onClick={() => setTab("guide")}>Tècnica</button>
         </nav>
-        <div className="week-counter"><strong>{completedThisWeek}/3</strong><span>aquesta setmana</span></div>
+        <div className="week-counter"><strong>{Math.min(weeklyProgress.base, 3)}/3</strong><span>aquesta setmana</span>{weeklyProgress.express > 0 && <em>+{weeklyProgress.express} Express</em>}</div>
       </header>
 
       <nav className="mobile-tabs" aria-label="Seccions de l’app">
@@ -450,7 +457,7 @@ export default function Home() {
           <section className="plan-panel" aria-labelledby="weekly-plan-title">
             <div className="section-heading">
               <div><span>01</span><h2 id="weekly-plan-title">Planificació setmanal</h2></div>
-              <p>Dos dies combinats de running + força i una sortida suau el cap de setmana.</p>
+              <p>Tres sessions base i un Full Body C Express opcional per a les setmanes en què et vingui de gust sumar.</p>
             </div>
 
             <div className="schedule">
@@ -466,14 +473,19 @@ export default function Home() {
               </button>
               <button className={routine === "RUN" ? "schedule-card selected cream" : "schedule-card"} onClick={() => switchRoutine("RUN")}>
                 <span className="day-index">03</span>
-                <div><small>DISSABTE O DIUMENGE</small><strong>Running suau</strong><p>30–45 min · RPE 4–5</p></div>
+                <div><small>DISSABTE O DIUMENGE</small><strong>Running lliure</strong><p>50–80 min · registre amb Suunto / Strava</p></div>
+                <span className="arrow">↗</span>
+              </button>
+              <button className={routine === "C" ? "schedule-card selected express" : "schedule-card"} onClick={() => switchRoutine("C")}>
+                <span className="day-index">+</span>
+                <div><small>OPCIONAL · QUAN ET VAGI BÉ</small><strong>Full Body C · Express</strong><p>30 min · sense running · 5 exercicis</p></div>
                 <span className="arrow">↗</span>
               </button>
             </div>
 
             <aside className="run-note">
-              <span>RITME</span>
-              <p><strong>Pots mantenir una conversa?</strong> Perfecte. Corre molt per sota de 4:20/km; avui l’objectiu és sumar, no competir.</p>
+              <span>RUNNING</span>
+              <p><strong>Entrenament completament lliure.</strong> Guarda ritme, distància, desnivell i recorregut a Suunto i Strava; aquí només cal que desis la sessió si vols que compti al teu 3/3.</p>
             </aside>
           </section>
 
@@ -483,7 +495,7 @@ export default function Home() {
                 <p className="eyebrow">REGISTRA LA SESSIÓ</p>
                 <h2 id="log-title">{routineLabel(routine)}</h2>
               </div>
-              <span className={`routine-badge ${routine === "A" ? "lime" : routine === "B" ? "orange" : "cream"}`}>{routine === "RUN" ? "03" : routine}</span>
+              <span className={`routine-badge ${routine === "A" ? "lime" : routine === "B" ? "orange" : routine === "C" ? "express" : "cream"}`}>{routine === "RUN" ? "03" : routine}</span>
             </div>
 
             <form onSubmit={saveWorkout}>
@@ -531,8 +543,8 @@ export default function Home() {
 
               {routine === "RUN" && (
                 <div className="run-form-card">
-                  <span className="run-orbit">RPE<br /><strong>4–5</strong></span>
-                  <div><h3>Sortida de gaudi</h3><p>Ritme còmode, respiració controlada i sensació que podries continuar una estona més.</p></div>
+                  <span className="run-orbit">50–80<br /><strong>MIN</strong></span>
+                  <div><h3>Entrenament lliure</h3><p>Tu tries ritme, terreny i objectiu. El detall complet de la sessió queda registrat al teu rellotge.</p><div className="tracker-badges"><span>SUUNTO</span><span>STRAVA</span></div></div>
                 </div>
               )}
 

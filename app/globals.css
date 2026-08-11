@@ -26,6 +26,7 @@ button { color: inherit; }
 .week-counter { display: flex; align-items: baseline; gap: 8px; }
 .week-counter strong { font-size: 23px; }
 .week-counter span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #686960; }
+.week-counter em { padding: 5px 7px; background: var(--ink); color: var(--lime); font-size: 9px; font-style: normal; font-weight: 900; }
 
 .eyebrow { margin: 0 0 20px; font-size: 10px; font-weight: 900; letter-spacing: .18em; }
 .mobile-tabs { display: none; }
@@ -48,6 +49,7 @@ button { color: inherit; }
 .schedule-card.selected.lime { background: var(--lime); }
 .schedule-card.selected.orange { background: var(--orange); }
 .schedule-card.selected.cream { background: var(--ink); color: var(--white); }
+.schedule-card.selected.express { background: var(--white); box-shadow: inset 0 0 0 3px var(--ink); }
 .day-index { font-family: Georgia, serif; font-size: 19px; font-style: italic; }
 .schedule-card div { display: grid; gap: 6px; }
 .schedule-card small { font-size: 9px; letter-spacing: .17em; font-weight: 900; }
@@ -67,6 +69,7 @@ button { color: inherit; }
 .routine-badge.lime { background: var(--lime); }
 .routine-badge.orange { background: var(--orange); }
 .routine-badge.cream { background: var(--paper); }
+.routine-badge.express { background: var(--white); border: 2px solid var(--ink); }
 .session-meta { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 1px; background: rgba(255,255,255,.16); margin: 1px 0 34px; }
 .session-meta label { position: relative; display: grid; gap: 10px; background: var(--ink); padding: 18px 16px; color: rgba(255,255,255,.58); font-size: 9px; text-transform: uppercase; letter-spacing: .14em; font-weight: 800; }
 .session-meta input { width: 100%; background: transparent; color: white; border: 0; outline: 0; font-weight: 800; font-size: 16px; color-scheme: dark; }
@@ -103,6 +106,8 @@ button { color: inherit; }
 .run-orbit strong { font-size: 26px; letter-spacing: 0; }
 .run-form-card h3 { font-size: 25px; margin: 0 0 8px; }
 .run-form-card p { margin: 0; max-width: 280px; line-height: 1.55; font-size: 13px; }
+.tracker-badges { display: flex; gap: 7px; margin-top: 16px; }
+.tracker-badges span { padding: 6px 9px; border: 1px solid var(--ink); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
 
 .content-section { min-height: 780px; }
 .progress-summary { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); margin-bottom: 45px; }
@@ -143,6 +148,7 @@ button { color: inherit; }
 .history-item { display: grid; grid-template-columns: 8px 1fr auto; gap: 12px; align-items: center; padding: 15px 0; border-top: 1px solid rgba(255,255,255,.14); }
 .history-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
 .history-dot.b { background: var(--orange); }
+.history-dot.c { background: var(--white); box-shadow: 0 0 0 1px rgba(255,255,255,.7); }
 .history-dot.run { background: var(--paper); }
 .history-item div { display: grid; gap: 4px; }
 .history-item strong { font-size: 12px; }

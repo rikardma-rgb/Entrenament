@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>;
     const sessionDate = typeof body.sessionDate === "string" ? body.sessionDate : "";
     const routine = body.routine;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) || (routine !== "A" && routine !== "B" && routine !== "RUN")) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) || (routine !== "A" && routine !== "B" && routine !== "C" && routine !== "RUN")) {
       return Response.json({ error: "Dades de sessió no vàlides." }, { status: 400 });
     }
     const duration = typeof body.durationMinutes === "number" && body.durationMinutes >= 1 && body.durationMinutes <= 240 ? Math.round(body.durationMinutes) : null;
