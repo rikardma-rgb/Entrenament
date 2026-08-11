@@ -17,6 +17,7 @@ type Exercise = {
   cues: string[];
   mistakes: string[];
   weighted: boolean;
+  note?: string;
 };
 
 type ExerciseResult = {
@@ -212,7 +213,120 @@ const exercisesB: Exercise[] = [
   },
 ];
 
-const exercisesC = [exercisesA[0], exercisesA[1], exercisesA[2], exercisesB[0], exercisesA[5]];
+const exercisesC: Exercise[] = [
+  {
+    id: "express-push-up",
+    name: "Flexions (push-ups)",
+    shortName: "Flexions",
+    sets: "10–15",
+    rest: "20–30 s",
+    focus: "Pectoral, tríceps i tronc",
+    setup: "Mans una mica més obertes que les espatlles, dits endavant i cos en una línia recta del cap als talons. Recolza els genolls si ho necessites.",
+    execution: "Baixa el pit entre les mans amb els colzes a uns 45° del cos. Empeny el terra fins a estirar els braços sense perdre la línia del tronc.",
+    cues: ["Cos recte", "Abdomen i glutis actius", "Pit entre les mans"],
+    mistakes: ["Deixar caure els malucs", "Obrir massa els colzes", "Fer només mig recorregut"],
+    weighted: false,
+    note: "De genolls si cal, mantenint el cos recte",
+  },
+  {
+    id: "express-bulgarian-squat",
+    name: "Sentadilla búlgara",
+    shortName: "Búlgara",
+    sets: "10 / cama",
+    rest: "20–30 s",
+    focus: "Quàdriceps, glutis i estabilitat",
+    setup: "Col·loca el peu del darrere sobre una cadira o banc estable i avança prou el peu davanter. Comença sense pes.",
+    execution: "Baixa el genoll posterior cap a terra mantenint el peu davanter completament recolzat. Puja empenyent amb la cama de davant.",
+    cues: ["Pes sobre la cama davantera", "Genoll alineat amb el peu", "Cadira completament estable"],
+    mistakes: ["Posar el peu davanter massa a prop", "Empènyer amb la cama posterior", "Perdre l’equilibri per anar ràpid"],
+    weighted: true,
+    note: "Peu del darrere sobre una cadira o banc; manuella opcional",
+  },
+  {
+    id: "express-plank",
+    name: "Planxa",
+    shortName: "Planxa",
+    sets: "30–40 s",
+    rest: "20–30 s",
+    focus: "Estabilitat del tronc",
+    setup: "Colzes sota les espatlles, cames estirades i peus separats a l’amplada dels malucs.",
+    execution: "Contrau abdomen i glutis i mantén una línia recta del cap als talons mentre continues respirant.",
+    cues: ["Gluti apretat", "Costelles cap avall", "Coll llarg"],
+    mistakes: ["Deixar caure els malucs", "Elevar massa el cul", "Aguantar la respiració"],
+    weighted: false,
+    note: "Cos en línia recta, gluti apretat",
+  },
+  {
+    id: "express-glute-bridge",
+    name: "Pont de glutis",
+    shortName: "Pont de glutis",
+    sets: "15",
+    rest: "20–30 s",
+    focus: "Glutis i cadena posterior",
+    setup: "Estira’t boca amunt, genolls flexionats i peus a terra a prop dels glutis, separats a l’amplada dels malucs.",
+    execution: "Empeny el terra amb els talons i eleva els malucs fins que espatlles, malucs i genolls quedin alineats. Prem els glutis a dalt.",
+    cues: ["Empenta amb el taló", "Pausa a dalt", "Costelles controlades"],
+    mistakes: ["Arquejar la zona lumbar", "Empènyer amb les puntes", "Obrir massa els genolls"],
+    weighted: false,
+    note: "Empenta amb el taló, apreta a dalt",
+  },
+  {
+    id: "express-superman",
+    name: "Superman altern",
+    shortName: "Superman",
+    sets: "12–15",
+    rest: "20–30 s",
+    focus: "Esquena, glutis i control creuat",
+    setup: "Posa’t a quatre grapes, mans sota espatlles i genolls sota malucs, amb l’esquena neutra.",
+    execution: "Allarga alhora un braç i la cama contrària sense girar el tronc. Torna amb control i alterna costat.",
+    cues: ["Braç i cama contraris", "Malucs de cara a terra", "Moviment llarg, no alt"],
+    mistakes: ["Arquejar la zona lumbar", "Girar la pelvis", "Fer el moviment amb impuls"],
+    weighted: false,
+    note: "Aixeca braç i cama contraris a la vegada",
+  },
+  {
+    id: "express-diamond-or-curl",
+    name: "Flexió diamant o curl de bíceps",
+    shortName: "Diamant o curl",
+    sets: "10–12",
+    rest: "20–30 s",
+    focus: "Tríceps o bíceps",
+    setup: "Per a la flexió, apropa les mans sota el pit. Si tries curl, agafa dues manuelles amb els colzes al costat del cos.",
+    execution: "Flexió: baixa amb el cos recte i els colzes prop del tronc. Curl: flexiona els colzes sense moure’ls endavant i baixa lentament.",
+    cues: ["Tria una de les dues opcions", "Sense impuls", "Recorregut controlat"],
+    mistakes: ["Obrir els colzes a la flexió", "Balancejar l’esquena al curl", "Sacrificar tècnica per repeticions"],
+    weighted: true,
+    note: "Diamant = tríceps sense pes; curl si tens manuelles",
+  },
+  {
+    id: "express-standing-calf",
+    name: "Elevació de talons dempeus",
+    shortName: "Bessons a casa",
+    sets: "20",
+    rest: "20–30 s",
+    focus: "Bessons, soli i peu",
+    setup: "Dempeus i descalç sobre una superfície estable, peus paral·lels i un suport a prop si necessites equilibri.",
+    execution: "Puja els talons tan alt com puguis, pausa un instant i baixa lentament fins a recolzar tot el peu.",
+    cues: ["Superfície estable", "Puja vertical", "Controla la baixada"],
+    mistakes: ["Fer rebots", "Girar els turmells", "Perdre l’equilibri per anar ràpid"],
+    weighted: false,
+    note: "Bo per la fàscia; descalç sobre superfície estable",
+  },
+  {
+    id: "express-monster-walk",
+    name: "Monster walk o clamshell",
+    shortName: "Monster walk",
+    sets: "12–15 / costat",
+    rest: "20–30 s",
+    focus: "Gluti mitjà i estabilitat de maluc",
+    setup: "Monster walk: banda sobre els genolls o turmells i posició de mitja sentadilla. Clamshell: de costat, genolls flexionats i banda sobre els genolls.",
+    execution: "Monster walk: fes passos laterals curts mantenint tensió a la banda. Clamshell: obre el genoll superior sense girar la pelvis.",
+    cues: ["10 passes per direcció si fas monster walk", "Genolls cap enfora", "Pelvis estable"],
+    mistakes: ["Ajuntar completament els peus", "Arrossegar-los", "Girar el tronc o la pelvis"],
+    weighted: false,
+    note: "12–15/costat o 10 passes/direcció; clau per la mecànica de cursa",
+  },
+];
 
 const routines = {
   A: { label: "Full Body A", day: "Dimarts", accent: "lime", exercises: exercisesA },
@@ -275,20 +389,54 @@ const alternatives: Record<string, { name: string; note: string }[]> = {
     { name: "Bessons assegut", note: "Més èmfasi al soli i molt poc espai necessari." },
     { name: "Bessons a una cama", note: "Sense màquina; subjecta una manuella si cal càrrega." },
   ],
+  "express-push-up": [
+    { name: "Flexions amb genolls", note: "Redueix la palanca mantenint el tronc recte." },
+    { name: "Flexions inclinades", note: "Mans sobre una taula o banc estable." },
+  ],
+  "express-bulgarian-squat": [
+    { name: "Gambada enrere", note: "Sense banc i amb menys exigència d’equilibri." },
+    { name: "Step-up", note: "Puja a una superfície baixa i estable." },
+  ],
+  "express-plank": [
+    { name: "Planxa amb genolls", note: "Mateixa tensió amb una palanca més curta." },
+    { name: "Dead bug", note: "Opció boca amunt sense càrrega sobre les espatlles." },
+  ],
+  "express-glute-bridge": [
+    { name: "Hip thrust al sofà", note: "Recolza la part alta de l’esquena i amplia el recorregut." },
+    { name: "Frog pumps", note: "Plantes dels peus juntes i genolls oberts." },
+  ],
+  "express-superman": [
+    { name: "Superman a terra", note: "Boca avall, eleva lleugerament braços i cames." },
+    { name: "Dead bug altern", note: "Opció boca amunt amb control creuat." },
+  ],
+  "express-diamond-or-curl": [
+    { name: "Extensió de tríceps en cadira", note: "Fes-la només amb una cadira molt estable." },
+    { name: "Curl amb banda", note: "Trepitja una goma i mantén els colzes quiets." },
+  ],
+  "express-standing-calf": [
+    { name: "Bessons a una cama", note: "Més intensitat sense afegir material." },
+    { name: "Bessons en un esglaó", note: "Afegeix recorregut si l’esglaó és estable." },
+  ],
+  "express-monster-walk": [
+    { name: "Clamshell", note: "De costat, obre el genoll sense girar la pelvis." },
+    { name: "Elevació lateral de cama", note: "Sense banda i amb el peu mirant endavant." },
+  ],
 };
 
 function exerciseVisual(exercise: Exercise) {
   const aIndex = exercisesA.findIndex((item) => item.id === exercise.id);
   const isA = aIndex >= 0;
-  const index = isA ? aIndex : exercisesB.findIndex((item) => item.id === exercise.id);
-  const columns = isA ? 4 : 3;
+  const bIndex = exercisesB.findIndex((item) => item.id === exercise.id);
+  const isB = bIndex >= 0;
+  const index = isA ? aIndex : isB ? bIndex : exercisesC.findIndex((item) => item.id === exercise.id);
+  const columns = isB ? 3 : 4;
   const column = index % columns;
   const row = Math.floor(index / columns);
   return {
-    backgroundImage: `url("/${isA ? "exercises-a" : "exercises-b"}.png")`,
+    backgroundImage: `url("/${isA ? "exercises-a" : isB ? "exercises-b" : "exercises-c"}.png")`,
     backgroundSize: `${columns * 100}% 200%`,
     backgroundPosition: `${columns === 1 ? 0 : (column / (columns - 1)) * 100}% ${row * 100}%`,
-    aspectRatio: isA ? "3 / 4" : "1 / 1",
+    aspectRatio: isB ? "1 / 1" : "3 / 4",
   };
 }
 
@@ -478,7 +626,7 @@ export default function Home() {
               </button>
               <button className={routine === "C" ? "schedule-card selected express" : "schedule-card"} onClick={() => switchRoutine("C")}>
                 <span className="day-index">+</span>
-                <div><small>OPCIONAL · QUAN ET VAGI BÉ</small><strong>Full Body C · Express</strong><p>30 min · sense running · 5 exercicis</p></div>
+                <div><small>OPCIONAL · QUAN ET VAGI BÉ</small><strong>Full Body C · Express</strong><p>30 min · sense running · 8 exercicis</p></div>
                 <span className="arrow">↗</span>
               </button>
             </div>
@@ -507,6 +655,7 @@ export default function Home() {
 
               {routine !== "RUN" && (
                 <div className="exercise-log">
+                  {routine === "C" && <div className="express-instructions"><strong>Circuit Express</strong><span>Fes 2–3 rondes · 20–30 s entre exercicis · 60 s entre rondes</span></div>}
                   <div className="exercise-log-head"><span>Exercici</span><span>Pes</span><span>Fet</span></div>
                   {activeExercises.map((exercise, index) => {
                     const result = results.find((entry) => entry.exerciseId === exercise.id);
@@ -514,7 +663,7 @@ export default function Home() {
                       <div className="exercise-entry" key={exercise.id}>
                         <button type="button" className="exercise-name" onClick={() => setSelectedExercise(exercise)} aria-label={`Veure tècnica de ${exercise.name}`}>
                           <span>{String(index + 1).padStart(2, "0")}</span>
-                          <div><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.rest} descans</small></div>
+                          <div><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.note ?? `${exercise.rest} descans`}</small></div>
                         </button>
                         <label className={exercise.weighted ? "weight-input" : "weight-input disabled"}>
                           <input
@@ -529,7 +678,7 @@ export default function Home() {
                             onChange={(event) => updateResult(exercise.id, { weight: event.target.value === "" ? null : Number(event.target.value) })}
                             aria-label={`Pes per ${exercise.name}`}
                           />
-                          <span>{exercise.weighted ? "kg" : "temps"}</span>
+                          <span>{exercise.weighted ? "kg" : "cos"}</span>
                         </label>
                         <label className="check-control">
                           <input type="checkbox" checked={result?.completed ?? false} onChange={(event) => updateResult(exercise.id, { completed: event.target.checked })} aria-label={`Marcar ${exercise.name} com completat`} />
@@ -609,6 +758,10 @@ export default function Home() {
               <p className="guide-label"><span className="dot orange" /> FULL BODY B · DIJOUS</p>
               {exercisesB.map((exercise, index) => <ExerciseGuideCard key={exercise.id} exercise={exercise} index={index + 1} onOpen={setSelectedExercise} />)}
             </div>
+            <div>
+              <p className="guide-label"><span className="dot express" /> EXPRESS · OPCIONAL</p>
+              {exercisesC.map((exercise, index) => <ExerciseGuideCard key={exercise.id} exercise={exercise} index={index + 1} onOpen={setSelectedExercise} />)}
+            </div>
           </div>
           <aside className="safety-note"><strong>Important</strong><p>La tècnica s’ha d’adaptar a la teva mobilitat i historial. Para si notes dolor agut, mareig o una sensació inusual, i consulta un professional qualificat si tens dubtes.</p></aside>
         </section>
@@ -631,7 +784,7 @@ export default function Home() {
               <div className="mistakes"><h3>Evita això</h3><ul>{selectedExercise.mistakes.map((mistake) => <li key={mistake}>{mistake}</li>)}</ul></div>
             </div>
             <div className="alternatives-block">
-              <div><p className="eyebrow">SI ESTÀ OCUPAT</p><h3>Alternatives equivalents</h3></div>
+              <div><p className="eyebrow">{selectedExercise.id.startsWith("express-") ? "SI VOLS CANVIAR-LO" : "SI ESTÀ OCUPAT"}</p><h3>Alternatives equivalents</h3></div>
               <div className="alternatives-grid">{alternatives[selectedExercise.id].map((alternative, index) => (
                 <div key={alternative.name}><span>0{index + 1}</span><strong>{alternative.name}</strong><p>{alternative.note}</p></div>
               ))}</div>

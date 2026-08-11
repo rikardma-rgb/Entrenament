@@ -77,6 +77,9 @@ button { color: inherit; }
 .exercise-log-head, .exercise-entry { display: grid; grid-template-columns: minmax(250px, 1fr) 105px 45px; gap: 12px; align-items: center; }
 .exercise-log-head { padding: 0 0 12px 44px; color: rgba(255,255,255,.4); text-transform: uppercase; font-weight: 900; letter-spacing: .15em; font-size: 8px; }
 .exercise-log-head span:last-child { text-align: center; }
+.express-instructions { margin-bottom: 22px; padding: 16px 18px; background: var(--white); color: var(--ink); display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.express-instructions strong { font-size: 13px; }
+.express-instructions span { font-size: 10px; color: #686960; text-align: right; }
 .exercise-entry { padding: 12px 0; border-top: 1px solid rgba(255,255,255,.13); }
 .exercise-name { border: 0; background: transparent; color: white; text-align: left; display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: center; padding: 0; cursor: pointer; }
 .exercise-name > span { color: rgba(255,255,255,.35); font-family: Georgia, serif; font-style: italic; }
@@ -157,11 +160,12 @@ button { color: inherit; }
 .empty-state { border: 1px solid var(--line); padding: 70px 30px; text-align: center; color: #6d6e66; }
 .empty-state strong { color: var(--ink); font-size: 22px; }
 
-.guide-split { display: grid; grid-template-columns: 1fr 1fr; gap: 5vw; }
+.guide-split { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3vw; }
 .guide-label { font-size: 9px; font-weight: 900; letter-spacing: .14em; display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
 .dot.lime { background: var(--lime); }
 .dot.orange { background: var(--orange); }
+.dot.express { background: var(--white); box-shadow: 0 0 0 1px var(--ink); }
 .guide-card { width: 100%; display: grid; grid-template-columns: 92px 1fr auto; gap: 17px; align-items: center; min-height: 128px; padding: 14px 0; border: 0; border-top: 1px solid var(--line); background: transparent; text-align: left; cursor: pointer; }
 .guide-thumb { width: 92px; display: block; background-repeat: no-repeat; border: 1px solid var(--line); position: relative; }
 .guide-thumb i { position: absolute; left: 5px; top: 5px; padding: 4px 5px; background: var(--ink); color: white; font-family: Georgia, serif; font-size: 10px; }
@@ -213,7 +217,7 @@ footer p, footer small { margin: 0; color: rgba(255,255,255,.52); font-size: 11p
   .plan-panel { border-right: 0; border-bottom: 1px solid var(--line); }
   .progress-layout { grid-template-columns: 1fr; }
   .history-card { width: 100%; }
-  .guide-split { gap: 30px; }
+  .guide-split { grid-template-columns: 1fr 1fr; gap: 30px; }
 }
 
 @media (max-width: 700px) {
@@ -237,6 +241,8 @@ footer p, footer small { margin: 0; color: rgba(255,255,255,.52); font-size: 11p
   .exercise-name > span { display: none; }
   .exercise-name strong { font-size: 12px; }
   .exercise-name small { font-size: 9px; }
+  .express-instructions { display: grid; }
+  .express-instructions span { text-align: left; }
   .weight-input { padding: 0 6px; }
   .check-control span { width: 34px; }
   .run-form-card { padding: 22px; display: grid; }
