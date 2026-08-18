@@ -1000,7 +1000,7 @@ export default function Home() {
                 <label className="notes-field">Notes de la sessió<textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Sensacions, molèsties, ajustos per a la pròxima... Aquesta informació servirà per a l’anàlisi amb IA." /></label>
                 {routine !== "RUN" && (
                   <div className="fit-upload-stack">
-                    {(routine === "A" || routine === "B") && (
+                    {(routine === "A" || routine === "B" || routine === "C") && (
                       <aside className="strength-fit-upload warmup-fit-upload">
                         <div><small>ESCALFAMENT DE RUNNING</small><strong>Adjunta el FIT de l’escalfament</strong><p>Pot durar 15, 20, 30 min o el que necessitis. Els km comptaran al total setmanal.</p></div>
                         <label className={importingFit === "warmup" ? "fit-import disabled" : "fit-import"}>
