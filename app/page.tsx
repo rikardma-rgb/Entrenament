@@ -38,7 +38,7 @@ type WorkoutSession = {
   rpe: number | null;
   exercises: ExerciseResult[];
   notes: string;
-  fitData: Partial<ImportedRun>;
+  fitData: SessionFitData;
   createdAt: string;
 };
 
@@ -56,6 +56,13 @@ type ImportedRun = {
   cadence: number | null;
   calories: number | null;
 };
+
+type SessionFitData = Partial<ImportedRun> & {
+  warmupRun?: ImportedRun | null;
+  strength?: ImportedRun | null;
+};
+
+type FitImportTarget = "run" | "warmup" | "strength";
 
 const exercisesA: Exercise[] = [
   {
@@ -393,8 +400,8 @@ const exercisesExpress: Exercise[] = [
 ];
 
 const routines = {
-  A: { label: "Base Total", day: "Dimarts", accent: "lime", exercises: exercisesA, description: "15 min suaus + força global: sentadilla, empenta de pit, rem i estabilitat." },
-  B: { label: "Motor Posterior", day: "Dijous", accent: "orange", exercises: exercisesB, description: "15 min suaus + cadena posterior, empenta vertical, jaló i treball unilateral." },
+  A: { label: "Base Total", day: "Dimarts", accent: "lime", exercises: exercisesA, description: "15–30 min suaus + força global: sentadilla, empenta de pit, rem i estabilitat." },
+  B: { label: "Motor Posterior", day: "Dijous", accent: "orange", exercises: exercisesB, description: "15–30 min suaus + cadena posterior, empenta vertical, jaló i treball unilateral." },
   C: { label: "Runner Resilience", day: "Opcional", accent: "cream", exercises: exercisesC, description: "Complement per córrer: glutis, isquios, adductors, espatlla, tibial i càrregues." },
   EXPRESS: { label: "Express 30", day: "Opcional", accent: "express", exercises: exercisesExpress, description: "Circuit curt de cos complet per als dies amb poc temps." },
 };
@@ -603,7 +610,9 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [importedRun, setImportedRun] = useState<ImportedRun | null>(null);
-  const [importingFit, setImportingFit] = useState(false);
+  const [warmupRun, setWarmupRun] = useState<ImportedRun | null>(null);
+  const [strengthFit, setStrengthFit] = useState<ImportedRun | null>(null);
+  const [importingFit, setImportingFit] = useState<FitImportTarget | null>(null);
   const [coachText, setCoachText] = useState("");
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachConfigured, setCoachConfigured] = useState<boolean | null>(null);
@@ -636,10 +645,10 @@ export default function Home() {
     };
   }, []);
 
-  async function importFitFile(event: ChangeEvent<HTMLInputElement>) {
+  async function importFitFile(event: ChangeEvent<HTMLInputElement>, target: FitImportTarget) {
     const file = event.target.files?.[0];
     if (!file) return;
-    setImportingFit(true);
+    setImportingFit(target);
     setMessage("");
     try {
       if (file.size > 20 * 1024 * 1024) throw new Error("El fitxer FIT és massa gran.");
@@ -656,7 +665,7 @@ export default function Home() {
       const elapsedSeconds = Number(session.totalElapsedTime ?? durationSeconds);
       const start = session.startTime instanceof Date ? session.startTime : new Date(String(session.startTime ?? ""));
       if (!durationSeconds || Number.isNaN(start.getTime())) throw new Error("Al FIT li falten el temps o la data.");
-      if (routine === "RUN" && !distanceKm) throw new Error("Aquest FIT no conté distància de running.");
+      if ((target === "run" || target === "warmup") && !distanceKm) throw new Error("Aquest FIT no conté distància de running.");
       const activity: ImportedRun = {
         name: file.name.replace(/\.fit$/i, ""),
         date: start.toISOString().slice(0, 10),
@@ -671,18 +680,27 @@ export default function Home() {
         cadence: session.avgRunningCadence || session.avgCadence ? Math.round(Number(session.avgRunningCadence ?? session.avgCadence)) : null,
         calories: session.totalCalories === undefined ? null : Math.round(Number(session.totalCalories)),
       };
-      setImportedRun(activity);
       setDate(activity.date);
-      setDuration(String(activity.durationMinutes));
-      if (routine === "RUN") {
+      if (target === "run") {
+        setImportedRun(activity);
+        setDuration(String(activity.durationMinutes));
         const paceMinutes = activity.pace ? displayPace(activity.pace) : "ritme no disponible";
         setNotes(`Suunto · ${activity.distanceKm.toFixed(2)} km · ${paceMinutes} · +${activity.elevation} m${activity.heartRate ? ` · ${activity.heartRate} ppm` : ""}`);
+      } else if (target === "warmup") {
+        setWarmupRun(activity);
+        const nextDuration = strengthFit
+          ? strengthFit.durationMinutes + activity.durationMinutes
+          : Math.max(1, Number(duration) || 0) - (warmupRun?.durationMinutes ?? 0) + activity.durationMinutes;
+        setDuration(String(nextDuration));
+      } else {
+        setStrengthFit(activity);
+        setDuration(String(activity.durationMinutes + (warmupRun?.durationMinutes ?? 0)));
       }
-      setMessage("Entrenament de Suunto importat. Revisa’l i desa la sessió.");
+      setMessage(target === "warmup" ? "Escalfament de running importat. Revisa’l i desa la sessió." : "Entrenament de Suunto importat. Revisa’l i desa la sessió.");
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "No s’ha pogut llegir el fitxer FIT.");
     } finally {
-      setImportingFit(false);
+      setImportingFit(null);
       event.target.value = "";
     }
   }
@@ -690,6 +708,8 @@ export default function Home() {
   function switchRoutine(next: RoutineId) {
     setRoutine(next);
     setImportedRun(null);
+    setWarmupRun(null);
+    setStrengthFit(null);
     setMessage("");
     setNotes("");
     if (window.matchMedia("(max-width: 760px)").matches) {
@@ -747,12 +767,20 @@ export default function Home() {
           rpe: Number(rpe) || null,
           exercises: routine === "RUN" ? [] : results,
           notes,
-          fitData: importedRun ?? {},
+          fitData: routine === "RUN"
+            ? importedRun ?? {}
+            : {
+                ...(warmupRun ? { warmupRun } : {}),
+                ...(strengthFit ? { strength: strengthFit } : {}),
+              },
         }),
       });
       if (!response.ok) throw new Error("No s’ha pogut desar");
       setMessage("Sessió desada. Bon entrenament!");
       setNotes("");
+      setImportedRun(null);
+      setWarmupRun(null);
+      setStrengthFit(null);
       await loadSessions();
     } catch {
       setMessage("No s’ha pogut desar la sessió. Torna-ho a provar.");
@@ -814,7 +842,13 @@ export default function Home() {
 
   const weeklyTotals = useMemo(() => ({
     minutes: currentWeek.sessions.reduce((total, session) => total + (session.durationMinutes ?? 0), 0),
-    calories: currentWeek.sessions.reduce((total, session) => total + Number(session.fitData?.calories ?? 0), 0),
+    calories: currentWeek.sessions.reduce((total, session) => total
+      + Number(session.fitData?.calories ?? 0)
+      + Number(session.fitData?.warmupRun?.calories ?? 0)
+      + Number(session.fitData?.strength?.calories ?? 0), 0),
+    kilometers: currentWeek.sessions.reduce((total, session) => total
+      + (session.routine === "RUN" ? Number(session.fitData?.distanceKm ?? 0) : 0)
+      + Number(session.fitData?.warmupRun?.distanceKm ?? 0), 0),
   }), [currentWeek]);
 
   const activeExercises = routine === "RUN" ? [] : routines[routine].exercises;
@@ -939,9 +973,9 @@ export default function Home() {
                     <h3>Entrenament lliure</h3>
                     <p>Tu tries ritme, terreny i objectiu. A Suunto, obre l’activitat, toca els tres punts i selecciona «Exportar com a FIT».</p>
                     <div className="tracker-badges"><span>SUUNTO</span><ArrowIcon /><span>FIT</span><ArrowIcon /><span>ENTRENA</span></div>
-                    <label className={importingFit ? "fit-import disabled" : "fit-import"}>
-                      <span>{importingFit ? "Llegint entrenament…" : "Importar fitxer de Suunto"}</span>
-                      <input type="file" accept=".fit,application/octet-stream" onChange={importFitFile} disabled={importingFit} />
+                    <label className={importingFit === "run" ? "fit-import disabled" : "fit-import"}>
+                      <span>{importingFit === "run" ? "Llegint entrenament…" : "Importar fitxer de Suunto"}</span>
+                      <input type="file" accept=".fit,application/octet-stream" onChange={(event) => void importFitFile(event, "run")} disabled={importingFit !== null} />
                     </label>
                     {importedRun && (
                       <div className="fit-result">
@@ -965,21 +999,40 @@ export default function Home() {
               <div className="notes-upload-row">
                 <label className="notes-field">Notes de la sessió<textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Sensacions, molèsties, ajustos per a la pròxima... Aquesta informació servirà per a l’anàlisi amb IA." /></label>
                 {routine !== "RUN" && (
-                  <aside className="strength-fit-upload">
-                    <div><small>DADES DEL RELLOTGE</small><strong>Importa el FIT de força</strong><p>Afegeix temps, calories i pulsacions a aquesta sessió.</p></div>
-                    <label className={importingFit ? "fit-import disabled" : "fit-import"}>
-                      <span>{importingFit ? "Llegint…" : "Pujar fitxer FIT"}</span>
-                      <input type="file" accept=".fit,application/octet-stream" onChange={importFitFile} disabled={importingFit} />
-                    </label>
-                    {importedRun && (
-                      <div className="strength-fit-result">
-                        <span><small>Temps</small><strong>{displayDuration(importedRun.durationMinutes)}</strong></span>
-                        {importedRun.calories !== null && <span><small>Energia</small><strong>{importedRun.calories} kcal</strong></span>}
-                        {importedRun.heartRate && <span><small>Pols mitjà</small><strong>{importedRun.heartRate} ppm</strong></span>}
-                        {importedRun.maxHeartRate && <span><small>Pols màxim</small><strong>{importedRun.maxHeartRate} ppm</strong></span>}
-                      </div>
+                  <div className="fit-upload-stack">
+                    {(routine === "A" || routine === "B") && (
+                      <aside className="strength-fit-upload warmup-fit-upload">
+                        <div><small>ESCALFAMENT DE RUNNING</small><strong>Adjunta el FIT de l’escalfament</strong><p>Pot durar 15, 20, 30 min o el que necessitis. Els km comptaran al total setmanal.</p></div>
+                        <label className={importingFit === "warmup" ? "fit-import disabled" : "fit-import"}>
+                          <span>{importingFit === "warmup" ? "Llegint…" : warmupRun ? "Canviar FIT de running" : "Pujar FIT de running"}</span>
+                          <input type="file" accept=".fit,application/octet-stream" onChange={(event) => void importFitFile(event, "warmup")} disabled={importingFit !== null} />
+                        </label>
+                        {warmupRun && (
+                          <div className="strength-fit-result">
+                            <span><small>Distància</small><strong>{warmupRun.distanceKm.toFixed(2)} km</strong></span>
+                            <span><small>Temps</small><strong>{displayDuration(warmupRun.durationMinutes)}</strong></span>
+                            {warmupRun.pace && <span><small>Ritme</small><strong>{displayPace(warmupRun.pace)}</strong></span>}
+                            {warmupRun.heartRate && <span><small>Pols mitjà</small><strong>{warmupRun.heartRate} ppm</strong></span>}
+                          </div>
+                        )}
+                      </aside>
                     )}
-                  </aside>
+                    <aside className="strength-fit-upload">
+                      <div><small>SESSIÓ DE FORÇA</small><strong>Importa el FIT de força</strong><p>Afegeix temps, calories i pulsacions sense substituir l’escalfament.</p></div>
+                      <label className={importingFit === "strength" ? "fit-import disabled" : "fit-import"}>
+                        <span>{importingFit === "strength" ? "Llegint…" : strengthFit ? "Canviar FIT de força" : "Pujar FIT de força"}</span>
+                        <input type="file" accept=".fit,application/octet-stream" onChange={(event) => void importFitFile(event, "strength")} disabled={importingFit !== null} />
+                      </label>
+                      {strengthFit && (
+                        <div className="strength-fit-result">
+                          <span><small>Temps</small><strong>{displayDuration(strengthFit.durationMinutes)}</strong></span>
+                          {strengthFit.calories !== null && <span><small>Energia</small><strong>{strengthFit.calories} kcal</strong></span>}
+                          {strengthFit.heartRate && <span><small>Pols mitjà</small><strong>{strengthFit.heartRate} ppm</strong></span>}
+                          {strengthFit.maxHeartRate && <span><small>Pols màxim</small><strong>{strengthFit.maxHeartRate} ppm</strong></span>}
+                        </div>
+                      )}
+                    </aside>
+                  </div>
                 )}
               </div>
               <button className="save-button" type="submit" disabled={saving}><span>{saving ? "Desant..." : "Desar sessió"}</span><ArrowIcon /></button>
@@ -994,6 +1047,7 @@ export default function Home() {
           <div className="weekly-kpis">
             <div className="highlight"><small>OBJECTIU SETMANAL</small><strong>{Math.min(weeklyProgress.base, 3)}/3</strong><span>{Math.min(Math.round((weeklyProgress.base / 3) * 100), 100)}% completat{weeklyProgress.base > 3 ? ` · +${weeklyProgress.base - 3} ${weeklyProgress.base - 3 === 1 ? "sessió extra" : "sessions extra"}` : ""} · {displayDate(currentWeek.days[0].key)} — {displayDate(currentWeek.days[6].key)}</span></div>
             <div><small>ENTRENAMENTS</small><strong>{currentWeek.sessions.length}</strong><span>aquesta setmana</span></div>
+            <div><small>KM SETMANALS</small><strong>{weeklyTotals.kilometers.toFixed(1)}</strong><span>running lliure + escalfaments</span></div>
             <div><small>TOTAL HISTÒRIC</small><strong>{sessions.length}</strong><span>sessions desades</span></div>
             <div><small>TEMPS SETMANAL</small><strong>{displayDuration(weeklyTotals.minutes)}</strong><span>{weeklyTotals.calories > 0 ? `${weeklyTotals.calories} kcal registrades` : "afegeix FIT per veure kcal"}</span></div>
           </div>
