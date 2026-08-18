@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Decoder, Stream } from "@garmin/fitsdk";
 import { BrandMark } from "./brand-mark";
+import { ArrowIcon, RoutineIcon } from "./workout-icons";
 
 type RoutineId = "A" | "B" | "C" | "EXPRESS" | "RUN";
 type TabId = "week" | "summary" | "progress" | "guide";
@@ -534,8 +535,12 @@ function emptyResults(routine: "A" | "B" | "C" | "EXPRESS"): ExerciseResult[] {
   return routines[routine].exercises.map((exercise) => ({ exerciseId: exercise.id, weight: null, reps: exercise.sets, completed: false }));
 }
 
-function PlankTimer() {
-  const duration = 40;
+function timedExerciseDuration(sets: string) {
+  const match = sets.match(/(\d+)(?:[–-](\d+))?\s*s\b/i);
+  return match ? Number(match[2] ?? match[1]) : null;
+}
+
+function ExerciseTimer({ duration, exerciseName }: { duration: number; exerciseName: string }) {
   const [seconds, setSeconds] = useState(duration);
   const [running, setRunning] = useState(false);
 
@@ -561,9 +566,9 @@ function PlankTimer() {
 
   const finished = seconds === 0;
   return (
-    <div className={finished ? "plank-timer finished" : "plank-timer"}>
+    <div className={finished ? "exercise-timer finished" : "exercise-timer"}>
       <div className="timer-readout" aria-live="polite">
-        <span>COMPTE ENRERE</span>
+        <span>{exerciseName.toUpperCase()}</span>
         <strong>{seconds}<small>s</small></strong>
       </div>
       <div className="timer-track" aria-hidden="true"><span style={{ width: `${(seconds / duration) * 100}%` }} /></div>
@@ -843,29 +848,29 @@ export default function Home() {
 
             <div className="schedule">
               <button className={routine === "A" ? "schedule-card selected lime" : "schedule-card"} onClick={() => switchRoutine("A")}>
-                <span className="day-index">01</span>
+                <span className="day-index"><RoutineIcon id="A" /></span>
                 <div><small>FULL BODY A · BASE GLOBAL</small><strong>15’ suau + Full Body A</strong><p>{routines.A.description}</p></div>
-                <span className="arrow">↗</span>
+                <span className="arrow"><ArrowIcon direction="up-right" /></span>
               </button>
               <button className={routine === "B" ? "schedule-card selected orange" : "schedule-card"} onClick={() => switchRoutine("B")}>
-                <span className="day-index">02</span>
+                <span className="day-index"><RoutineIcon id="B" /></span>
                 <div><small>FULL BODY B · CADENA POSTERIOR</small><strong>15’ suau + Full Body B</strong><p>{routines.B.description}</p></div>
-                <span className="arrow">↗</span>
+                <span className="arrow"><ArrowIcon direction="up-right" /></span>
               </button>
               <button className={routine === "RUN" ? "schedule-card selected cream" : "schedule-card"} onClick={() => switchRoutine("RUN")}>
-                <span className="day-index">03</span>
+                <span className="day-index"><RoutineIcon id="RUN" /></span>
                 <div><small>DISSABTE O DIUMENGE</small><strong>Running lliure</strong><p>50–80 min · registre amb Suunto</p></div>
-                <span className="arrow">↗</span>
+                <span className="arrow"><ArrowIcon direction="up-right" /></span>
               </button>
               <button className={routine === "C" ? "schedule-card selected lime" : "schedule-card"} onClick={() => switchRoutine("C")}>
-                <span className="day-index">C</span>
+                <span className="day-index"><RoutineIcon id="C" /></span>
                 <div><small>FULL BODY C · RUNNER RESILIENCE</small><strong>Full Body C</strong><p>{routines.C.description}</p></div>
-                <span className="arrow">↗</span>
+                <span className="arrow"><ArrowIcon direction="up-right" /></span>
               </button>
               <button className={routine === "EXPRESS" ? "schedule-card selected express" : "schedule-card"} onClick={() => switchRoutine("EXPRESS")}>
-                <span className="day-index">+</span>
+                <span className="day-index"><RoutineIcon id="EXPRESS" /></span>
                 <div><small>OPCIONAL · QUAN TENS POC TEMPS</small><strong>Full Body Express</strong><p>{routines.EXPRESS.description}</p></div>
-                <span className="arrow">↗</span>
+                <span className="arrow"><ArrowIcon direction="up-right" /></span>
               </button>
             </div>
 
@@ -881,7 +886,7 @@ export default function Home() {
                 <p className="eyebrow">REGISTRA LA SESSIÓ</p>
                 <h2 id="log-title">{routineLabel(routine)}</h2>
               </div>
-              <span className={`routine-badge ${routine === "A" ? "lime" : routine === "B" ? "orange" : routine === "EXPRESS" ? "express" : "cream"}`}>{routine === "RUN" ? "03" : routine === "EXPRESS" ? "+" : routine}</span>
+              <span className={`routine-badge ${routine === "A" ? "lime" : routine === "B" ? "orange" : routine === "EXPRESS" ? "express" : "cream"}`}><RoutineIcon id={routine} /></span>
             </div>
 
             <form onSubmit={saveWorkout}>
@@ -897,8 +902,9 @@ export default function Home() {
                   <div className="exercise-log-head"><span>Exercici</span><span>Pes</span><span>Fet</span></div>
                   {activeExercises.map((exercise, index) => {
                     const result = results.find((entry) => entry.exerciseId === exercise.id);
+                    const timerDuration = timedExerciseDuration(exercise.sets);
                     return (
-                      <div className={exercise.shortName === "Planxa" ? "exercise-entry has-timer" : "exercise-entry"} key={exercise.id}>
+                      <div className={timerDuration ? "exercise-entry has-timer" : "exercise-entry"} key={exercise.id}>
                         <button type="button" className="exercise-name" onClick={() => setSelectedExercise(exercise)} aria-label={`Veure tècnica de ${exercise.name}`}>
                           <span>{String(index + 1).padStart(2, "0")}</span>
                           <div><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.note ?? `${exercise.rest} descans`}</small></div>
@@ -922,7 +928,7 @@ export default function Home() {
                           <input type="checkbox" checked={result?.completed ?? false} onChange={(event) => updateResult(exercise.id, { completed: event.target.checked })} aria-label={`Marcar ${exercise.name} com completat`} />
                           <span>✓</span>
                         </label>
-                        {exercise.shortName === "Planxa" && <PlankTimer />}
+                        {timerDuration && <ExerciseTimer duration={timerDuration} exerciseName={exercise.shortName} />}
                       </div>
                     );
                   })}
@@ -935,7 +941,7 @@ export default function Home() {
                   <div className="run-card-copy">
                     <h3>Entrenament lliure</h3>
                     <p>Tu tries ritme, terreny i objectiu. A Suunto, obre l’activitat, toca els tres punts i selecciona «Exportar com a FIT».</p>
-                    <div className="tracker-badges"><span>SUUNTO</span><span>→</span><span>FIT</span><span>→</span><span>ENTRENA</span></div>
+                    <div className="tracker-badges"><span>SUUNTO</span><ArrowIcon /><span>FIT</span><ArrowIcon /><span>ENTRENA</span></div>
                     <label className={importingFit ? "fit-import disabled" : "fit-import"}>
                       <span>{importingFit ? "Llegint entrenament…" : "Importar fitxer de Suunto"}</span>
                       <input type="file" accept=".fit,application/octet-stream" onChange={importFitFile} disabled={importingFit} />
@@ -979,7 +985,7 @@ export default function Home() {
                   </aside>
                 )}
               </div>
-              <button className="save-button" type="submit" disabled={saving}><span>{saving ? "Desant..." : "Desar sessió"}</span><span>→</span></button>
+              <button className="save-button" type="submit" disabled={saving}><span>{saving ? "Desant..." : "Desar sessió"}</span><ArrowIcon /></button>
               {message && <p className={message.startsWith("Sessió") ? "form-message success" : "form-message"} role="status">{message}</p>}
             </form>
           </section>
@@ -1005,7 +1011,7 @@ export default function Home() {
               <article className={day.sessions.length ? "calendar-day trained" : "calendar-day"} key={day.key}>
                 <small>{new Intl.DateTimeFormat("ca-ES", { weekday: "short" }).format(day.date).replace(".", "")}</small>
                 <strong>{day.date.getDate()}</strong>
-                <div>{day.sessions.length === 0 ? <span className="rest-day">—</span> : day.sessions.map((session) => <span className={`session-pill ${session.routine.toLowerCase()}`} key={session.id}>{session.routine === "RUN" ? "RUN" : session.routine}</span>)}</div>
+                <div>{day.sessions.length === 0 ? <span className="rest-day">—</span> : day.sessions.map((session) => <span className={`session-pill ${session.routine.toLowerCase()}`} title={routineLabel(session.routine)} key={session.id}><RoutineIcon id={session.routine} /></span>)}</div>
               </article>
             ))}
           </div>
@@ -1015,7 +1021,7 @@ export default function Home() {
             {coachText ? <div className="coach-response">{coachText.split("\n").filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div> : <div className="coach-empty"><p>Gemini analitzarà les sessions, les càrregues, l’RPE, les dades FIT i els teus comentaris per donar-te una valoració personalitzada.</p>{coachConfigured === false && <small>Cal afegir la clau de Google AI Studio per activar-lo.</small>}</div>}
           </div>
 
-          <button className="secondary-technique" type="button" onClick={() => setTab("guide")}>Consultar la guia de tècnica →</button>
+          <button className="secondary-technique" type="button" onClick={() => setTab("guide")}>Consultar la guia de tècnica <ArrowIcon /></button>
         </section>
       )}
 
@@ -1132,7 +1138,7 @@ function ExerciseGuideCard({ exercise, index, onOpen }: { exercise: Exercise; in
     <button className="guide-card" onClick={() => onOpen(exercise)}>
       <span className="guide-thumb" style={exerciseVisual(exercise)}><i>{String(index).padStart(2, "0")}</i></span>
       <div className="guide-card-copy"><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.focus}</small>{alternatives[exercise.id] && <em>2 alternatives disponibles</em>}</div>
-      <b>Veure tècnica →</b>
+      <b>Veure tècnica <ArrowIcon /></b>
     </button>
   );
 }
