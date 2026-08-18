@@ -75,6 +75,7 @@ test("uses independent Cloudflare configuration", async () => {
   ]);
 
   assert.doesNotMatch(page, /ChatGPT|signin-with-chatgpt/i);
+  assert.match(page, /KCAL SETMANALS/);
   assert.match(page, /KM SETMANALS/);
   assert.doesNotMatch(viteConfig, /hosting\.json|sites-vite-plugin/i);
   assert.match(packageJson, /"deploy": "vinext-cloudflare deploy"/);
