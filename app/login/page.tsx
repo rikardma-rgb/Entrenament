@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { BrandMark } from "../brand-mark";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -30,7 +31,7 @@ export default function LoginPage() {
   return (
     <main className="login-shell">
       <section className="login-card">
-        <div className="login-brand"><span className="brand-mark">E</span><span>ENTRENA</span></div>
+        <div className="login-brand"><BrandMark /><span>ENTRENA</span></div>
         <p className="eyebrow">ACCÉS PERSONAL</p>
         <h1>El teu progrés,<br />només per a tu.</h1>
         <p className="login-copy">Introdueix la contrasenya de l’app. El mòbil recordarà l’accés durant 30 dies.</p>
