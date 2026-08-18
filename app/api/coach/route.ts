@@ -24,16 +24,38 @@ ${JSON.stringify(sessions.map((session) => ({
   exercicis: JSON.parse(session.exerciseData), comentaris: session.notes, fit: JSON.parse(session.fitData || "{}"),
 })))}
 
-Analitza especialment la setmana actual i compara-la amb les anteriors. Valora la constància, la càrrega, la progressió de força, l'RPE, la recuperació, els comentaris i les dades FIT. Tingues en compte els objectius i antecedents del perfil. Respon amb 3 paràgrafs curts: 1) valoració real del progrés, 2) què funciona i què cal vigilar, 3) recomanació concreta i mesurable per a la pròxima setmana. Esmenta dades reals quan siguin útils i reconeix clarament quan encara hi ha poques dades.`;
+Analitza especialment la setmana actual i compara-la amb les anteriors. Valora la constància, la càrrega, la progressió de força, l'RPE, la recuperació, els comentaris i les dades FIT. Tingues en compte els objectius i antecedents del perfil.
+
+Respon en català natural amb exactament 4 paràgrafs, de 2 a 4 frases cadascun i amb aquest títol al començament: "Situació actual —", "Progrés —", "Punts a vigilar —" i "Pròxima setmana —". L'últim paràgraf ha de proposar accions concretes i mesurables. Esmenta dades reals quan siguin útils i reconeix clarament quan encara hi ha poques dades. No copiïs el JSON, no mostris noms de camps interns com completed/false i no deixis cap frase a mitges.`;
     const model = bindings.GEMINI_MODEL || "gemini-3.5-flash";
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": bindings.GEMINI_API_KEY },
-      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.45, maxOutputTokens: 700 } }),
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.45,
+          maxOutputTokens: 2000,
+          thinkingConfig: { thinkingLevel: "low" },
+        },
+      }),
     });
     if (!response.ok) throw new Error(`Gemini ha respost amb l’estat ${response.status}`);
-    const result = await response.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const analysis = result.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("").trim();
+    const result = await response.json() as {
+      candidates?: {
+        finishReason?: string;
+        content?: { parts?: { text?: string; thought?: boolean }[] };
+      }[];
+    };
+    const candidate = result.candidates?.[0];
+    if (candidate?.finishReason === "MAX_TOKENS") {
+      throw new Error("Gemini ha esgotat el límit de resposta.");
+    }
+    const analysis = candidate?.content?.parts
+      ?.filter((part) => !part.thought)
+      .map((part) => part.text ?? "")
+      .join("")
+      .trim();
     if (!analysis) throw new Error("Gemini no ha retornat cap valoració.");
     return Response.json({ configured: true, analysis });
   } catch {
