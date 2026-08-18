@@ -36,10 +36,19 @@ Respon en català natural amb exactament 4 paràgrafs, de 2 a 4 frases cadascun 
         generationConfig: {
           temperature: 0.45,
           maxOutputTokens: 4000,
+          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
     });
-    if (!response.ok) throw new Error(`Gemini ha respost amb l’estat ${response.status}`);
+    if (!response.ok) {
+      const messages: Record<number, string> = {
+        400: "La configuració del model de Gemini no és compatible.",
+        403: "La clau de Gemini no té permís o ha deixat de ser vàlida.",
+        404: "El model de Gemini configurat ja no està disponible.",
+        429: "S’ha assolit temporalment la quota gratuïta de Gemini.",
+      };
+      throw new Error(messages[response.status] ?? `Gemini ha respost amb l’estat ${response.status}.`);
+    }
     const result = await response.json() as {
       candidates?: {
         finishReason?: string;
@@ -57,7 +66,9 @@ Respon en català natural amb exactament 4 paràgrafs, de 2 a 4 frases cadascun 
       .trim();
     if (!analysis) throw new Error("Gemini no ha retornat cap valoració.");
     return Response.json({ configured: true, analysis });
-  } catch {
-    return Response.json({ configured: true, error: "No s’ha pogut generar la valoració de Gemini." }, { status: 502 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "No s’ha pogut generar la valoració de Gemini.";
+    console.error("Gemini coach error:", message);
+    return Response.json({ configured: true, error: message }, { status: 502 });
   }
 }
