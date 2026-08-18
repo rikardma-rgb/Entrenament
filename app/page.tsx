@@ -1047,9 +1047,10 @@ export default function Home() {
           <div className="weekly-kpis">
             <div className="highlight"><small>OBJECTIU SETMANAL</small><strong>{Math.min(weeklyProgress.base, 3)}/3</strong><span>{Math.min(Math.round((weeklyProgress.base / 3) * 100), 100)}% completat{weeklyProgress.base > 3 ? ` · +${weeklyProgress.base - 3} ${weeklyProgress.base - 3 === 1 ? "sessió extra" : "sessions extra"}` : ""} · {displayDate(currentWeek.days[0].key)} — {displayDate(currentWeek.days[6].key)}</span></div>
             <div><small>ENTRENAMENTS</small><strong>{currentWeek.sessions.length}</strong><span>aquesta setmana</span></div>
+            <div><small>KCAL SETMANALS</small><strong>{weeklyTotals.calories}</strong><span>{weeklyTotals.calories > 0 ? "registrades amb els FIT" : "afegeix FIT per calcular-les"}</span></div>
             <div><small>KM SETMANALS</small><strong>{weeklyTotals.kilometers.toFixed(1)}</strong><span>running lliure + escalfaments</span></div>
+            <div><small>TEMPS SETMANAL</small><strong>{displayDuration(weeklyTotals.minutes)}</strong><span>durada total registrada</span></div>
             <div><small>TOTAL HISTÒRIC</small><strong>{sessions.length}</strong><span>sessions desades</span></div>
-            <div><small>TEMPS SETMANAL</small><strong>{displayDuration(weeklyTotals.minutes)}</strong><span>{weeklyTotals.calories > 0 ? `${weeklyTotals.calories} kcal registrades` : "afegeix FIT per veure kcal"}</span></div>
           </div>
 
           <div className="week-calendar">
