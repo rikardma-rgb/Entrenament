@@ -40,7 +40,7 @@ button { color: inherit; }
 
 .topbar { height: 76px; padding: 0 4vw; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; background: rgba(241, 239, 231, 0.94); backdrop-filter: blur(14px); }
 .brand { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 900; letter-spacing: .15em; }
-.brand-mark { width: 29px; height: 29px; display: grid; place-items: center; background: var(--ink); color: var(--lime); font-size: 16px; letter-spacing: 0; transform: rotate(-4deg); }
+.brand-symbol { width: 34px; height: 28px; display: block; flex: 0 0 auto; color: var(--ink); }
 .desktop-nav { display: flex; align-items: center; gap: 30px; }
 .desktop-nav button, .mobile-tabs button { border: 0; background: transparent; padding: 9px 0; cursor: pointer; font-weight: 700; font-size: 13px; position: relative; }
 .desktop-nav button::after { content: ""; position: absolute; left: 0; right: 100%; bottom: 2px; height: 2px; background: var(--ink); transition: right .2s ease; }

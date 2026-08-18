@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Decoder, Stream } from "@garmin/fitsdk";
+import { BrandMark } from "./brand-mark";
 
 type RoutineId = "A" | "B" | "C" | "EXPRESS" | "RUN";
 type TabId = "week" | "summary" | "progress" | "guide";
@@ -815,7 +816,7 @@ export default function Home() {
     <main id="top">
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Entrena, inici">
-          <span className="brand-mark">E</span>
+          <BrandMark />
           <span>ENTRENA</span>
         </a>
         <nav className="desktop-nav" aria-label="Navegació principal">
