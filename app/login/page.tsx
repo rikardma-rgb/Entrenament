@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { BrandMark } from "../brand-mark";
+import { ArrowIcon } from "../workout-icons";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -47,7 +48,7 @@ export default function LoginPage() {
           />
           {error && <p className="login-error" role="alert">{error}</p>}
           <button type="submit" disabled={loading || !password}>
-            <span>{loading ? "Comprovant…" : "Entrar"}</span><span>→</span>
+            <span>{loading ? "Comprovant…" : "Entrar"}</span><ArrowIcon />
           </button>
         </form>
         <small>Sense ChatGPT · Dades guardades al teu Cloudflare</small>
