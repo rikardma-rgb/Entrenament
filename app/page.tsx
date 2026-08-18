@@ -487,19 +487,18 @@ const alternatives: Record<string, { name: string; note: string }[]> = {
 };
 
 function exerciseVisual(exercise: Exercise) {
-  if (exercise.id.startsWith("runner-")) {
-    return { backgroundImage: "radial-gradient(circle at 30% 25%, #d9ff43 0 12%, transparent 13%), linear-gradient(145deg, #26271f, #55584a)", aspectRatio: "3 / 4" };
-  }
   const aIndex = exercisesA.findIndex((item) => item.id === exercise.id);
   const isA = aIndex >= 0;
   const bIndex = exercisesB.findIndex((item) => item.id === exercise.id);
   const isB = bIndex >= 0;
-  const index = isA ? aIndex : isB ? bIndex : exercisesExpress.findIndex((item) => item.id === exercise.id);
+  const cIndex = exercisesC.findIndex((item) => item.id === exercise.id);
+  const isC = cIndex >= 0;
+  const index = isA ? aIndex : isB ? bIndex : isC ? cIndex : exercisesExpress.findIndex((item) => item.id === exercise.id);
   const columns = isB ? 3 : 4;
   const column = index % columns;
   const row = Math.floor(index / columns);
   return {
-    backgroundImage: `url("/${isA ? "exercises-a" : isB ? "exercises-b" : "exercises-c"}.png")`,
+    backgroundImage: `url("/${isA ? "exercises-a" : isB ? "exercises-b" : isC ? "exercises-runner-c" : "exercises-c"}.png")`,
     backgroundSize: `${columns * 100}% 200%`,
     backgroundPosition: `${columns === 1 ? 0 : (column / (columns - 1)) * 100}% ${row * 100}%`,
     aspectRatio: isB ? "1 / 1" : "3 / 4",
