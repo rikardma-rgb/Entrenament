@@ -3,7 +3,8 @@
 App personal d’entrenament per seguir un pla de tres dies per setmana:
 
 - Full Body A i Full Body B com a sessions principals
-- Full Body C «Express» opcional de 30 minuts
+- Full Body C complementari per a running i resistència estructural
+- Circuit «Express» opcional de 30 minuts
 - Running lliure de 50–80 minuts, registrat amb Suunto i Strava
 
 Permet registrar el pes utilitzat a cada exercici, marcar les sèries completades, guardar RPE, durada i notes, consultar l’historial i veure el progrés. També inclou una guia tècnica detallada per a tots els exercicis de força.
@@ -18,6 +19,18 @@ pnpm run dev
 ```
 
 L’app s’obrirà normalment a `http://localhost:3000`.
+
+## Importació des de Suunto
+
+A l’apartat Running es pot seleccionar un entrenament `.FIT` exportat des de
+Suunto. El fitxer es llegeix localment al navegador i omple automàticament la
+data, la durada, la distància, el ritme, el desnivell i les pulsacions disponibles.
+
+## Entrenador Gemini
+
+El Calendari setmanal pot generar una valoració amb Gemini a partir de l’historial,
+les càrregues, l’RPE, els FIT i els comentaris. Configura `GEMINI_API_KEY` i
+`ATHLETE_PROFILE` a `.dev.vars`. La clau només s’utilitza al servidor.
 
 ## Base de dades
 

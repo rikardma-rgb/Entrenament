@@ -11,6 +11,7 @@ export const workoutSessions = sqliteTable(
     rpe: integer("rpe"),
     exerciseData: text("exercise_data").notNull().default("[]"),
     notes: text("notes").notNull().default(""),
+    fitData: text("fit_data").notNull().default("{}"),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [

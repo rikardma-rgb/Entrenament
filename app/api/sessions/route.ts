@@ -38,6 +38,7 @@ export async function GET() {
         rpe: row.rpe,
         exercises: JSON.parse(row.exerciseData) as ExerciseResult[],
         notes: row.notes,
+        fitData: JSON.parse(row.fitData || "{}") as Record<string, unknown>,
         createdAt: row.createdAt,
       })),
     });
@@ -51,13 +52,14 @@ export async function POST(request: Request) {
     const body = (await request.json()) as Record<string, unknown>;
     const sessionDate = typeof body.sessionDate === "string" ? body.sessionDate : "";
     const routine = body.routine;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) || (routine !== "A" && routine !== "B" && routine !== "C" && routine !== "RUN")) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate) || (routine !== "A" && routine !== "B" && routine !== "C" && routine !== "EXPRESS" && routine !== "RUN")) {
       return Response.json({ error: "Dades de sessió no vàlides." }, { status: 400 });
     }
     const duration = typeof body.durationMinutes === "number" && body.durationMinutes >= 1 && body.durationMinutes <= 240 ? Math.round(body.durationMinutes) : null;
     const rpe = typeof body.rpe === "number" && body.rpe >= 1 && body.rpe <= 10 ? Math.round(body.rpe) : null;
     const notes = typeof body.notes === "string" ? body.notes.trim().slice(0, 1000) : "";
     const exercises = cleanExercises(body.exercises);
+    const fitData = body.fitData && typeof body.fitData === "object" ? JSON.stringify(body.fitData).slice(0, 4000) : "{}";
 
     await ensureWorkoutSchema();
     const [session] = await getDb().insert(workoutSessions).values({
@@ -67,6 +69,7 @@ export async function POST(request: Request) {
       rpe,
       exerciseData: JSON.stringify(exercises),
       notes,
+      fitData,
     }).returning();
     return Response.json({ session }, { status: 201 });
   } catch {

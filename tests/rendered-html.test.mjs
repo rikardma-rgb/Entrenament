@@ -57,7 +57,8 @@ test("protects and server-renders the workout tracker", async () => {
   const html = await response.text();
   assert.match(html, /<title>ENTRENA — El teu pla de força<\/title>/i);
   assert.match(html, /Planificació setmanal/);
-  assert.match(html, /Full Body C · Express/);
+  assert.match(html, /Full Body C/);
+  assert.match(html, /Full Body Express/);
   assert.match(html, /Running lliure/);
   assert.match(html, /Progrés/);
   assert.doesNotMatch(html, /codex-preview|signin-with-chatgpt/i);
@@ -79,7 +80,8 @@ test("uses independent Cloudflare configuration", async () => {
   assert.match(wranglerConfig, /"database_name": "entrena-progress-db"/);
   assert.match(wranglerConfig, /"main": "\.\/worker\/index\.ts"/);
   assert.match(worker, /APP_PASSWORD/);
-  assert.match(worker, /HttpOnly; Secure; SameSite=Strict/);
+  assert.match(worker, /HttpOnly\$\{secure\}; SameSite=Strict/);
+  assert.match(worker, /protocol === "https:" \? "; Secure"/);
 
   await Promise.all([
     access(new URL("../public/exercises-a.png", import.meta.url)),

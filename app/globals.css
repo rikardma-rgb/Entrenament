@@ -85,6 +85,7 @@ button { color: inherit; }
 .run-note p { margin: 0; font-size: 13px; line-height: 1.55; }
 
 .log-title-row { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,.16); }
+.log-panel { scroll-margin-top: 112px; }
 .log-title-row h2 { font-size: clamp(35px, 4vw, 57px); line-height: 1; letter-spacing: -.05em; margin: 0; }
 .log-title-row .eyebrow { color: rgba(255,255,255,.55); }
 .routine-badge { width: 53px; height: 53px; display: grid; place-items: center; color: var(--ink); font-weight: 900; font-size: 18px; transform: rotate(3deg); }
@@ -92,6 +93,8 @@ button { color: inherit; }
 .routine-badge.orange { background: var(--orange); }
 .routine-badge.cream { background: var(--paper); }
 .routine-badge.express { background: var(--white); border: 2px solid var(--ink); }
+.topbar-actions { display: flex; align-items: center; gap: 14px; }
+.technique-link { padding: 7px 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .1em; cursor: pointer; }
 .session-meta { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 1px; background: rgba(255,255,255,.16); margin: 1px 0 34px; }
 .session-meta label { position: relative; display: grid; gap: 10px; background: var(--ink); padding: 18px 16px; color: rgba(255,255,255,.58); font-size: 9px; text-transform: uppercase; letter-spacing: .14em; font-weight: 800; }
 .session-meta input { width: 100%; background: transparent; color: white; border: 0; outline: 0; font-weight: 800; font-size: 16px; color-scheme: dark; }
@@ -117,9 +120,33 @@ button { color: inherit; }
 .check-control span { width: 35px; height: 35px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.25); color: transparent; cursor: pointer; transition: .15s ease; }
 .check-control input:focus-visible + span { outline: 2px solid var(--lime); outline-offset: 2px; }
 .check-control input:checked + span { background: var(--lime); border-color: var(--lime); color: var(--ink); font-weight: 900; }
+.plank-timer { grid-column: 1 / -1; margin: 4px 0 8px 44px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.06); display: grid; grid-template-columns: auto minmax(80px, 1fr) auto; align-items: center; gap: 16px; }
+.timer-readout { display: flex; align-items: center; gap: 12px; }
+.timer-readout > span { color: rgba(255,255,255,.45); font-size: 8px; font-weight: 900; letter-spacing: .14em; }
+.timer-readout strong { min-width: 58px; color: var(--lime); font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+.timer-readout small { margin-left: 2px; font-size: 11px; }
+.timer-track { height: 4px; overflow: hidden; background: rgba(255,255,255,.14); }
+.timer-track span { display: block; height: 100%; background: var(--lime); transition: width .3s linear; }
+.timer-actions { display: flex; gap: 7px; }
+.timer-actions button { min-width: 76px; height: 36px; padding: 0 12px; border: 0; background: var(--lime); color: var(--ink); font-size: 10px; font-weight: 900; cursor: pointer; }
+.timer-actions button:disabled { cursor: default; opacity: .45; }
+.timer-actions .timer-reset { min-width: 0; border: 1px solid rgba(255,255,255,.3); background: transparent; color: white; }
+.plank-timer.finished { border-color: var(--lime); }
+.plank-timer.finished .timer-readout > span::after { content: " · FET!"; color: var(--lime); }
 .notes-field { display: grid; gap: 10px; margin-top: 28px; color: rgba(255,255,255,.5); font-size: 9px; text-transform: uppercase; letter-spacing: .14em; font-weight: 900; }
 .notes-field textarea { resize: vertical; padding: 15px; border: 1px solid rgba(255,255,255,.18); outline: 0; background: rgba(255,255,255,.06); color: white; font-size: 13px; line-height: 1.45; text-transform: none; letter-spacing: 0; }
 .notes-field textarea:focus, .weight-input:focus-within { border-color: var(--lime); }
+.notes-upload-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(210px, .72fr); gap: 14px; align-items: stretch; margin-top: 28px; }
+.notes-upload-row .notes-field { margin-top: 0; }
+.strength-fit-upload { padding: 15px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); display: grid; align-content: start; gap: 10px; }
+.strength-fit-upload > div > small { color: var(--lime); font-size: 7px; font-weight: 900; letter-spacing: .14em; }
+.strength-fit-upload > div > strong { display: block; margin-top: 5px; color: white; font-size: 12px; }
+.strength-fit-upload > div > p { margin: 5px 0 0; color: rgba(255,255,255,.5); font-size: 9px; line-height: 1.4; }
+.strength-fit-upload .fit-import { min-height: 38px; margin-top: 0; }
+.strength-fit-result { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; }
+.strength-fit-result > span { padding: 8px; background: var(--ink); display: grid; gap: 4px; }
+.strength-fit-result small { color: rgba(255,255,255,.4); font-size: 7px; text-transform: uppercase; }
+.strength-fit-result strong { color: white; font-size: 10px; }
 .save-button { width: 100%; height: 62px; margin-top: 16px; padding: 0 22px; border: 0; background: var(--lime); display: flex; justify-content: space-between; align-items: center; font-weight: 900; cursor: pointer; transition: background .2s ease; }
 .save-button:hover { background: #dcff58; }
 .save-button:disabled { opacity: .65; cursor: wait; }
@@ -133,8 +160,50 @@ button { color: inherit; }
 .run-form-card p { margin: 0; max-width: 280px; line-height: 1.55; font-size: 13px; }
 .tracker-badges { display: flex; gap: 7px; margin-top: 16px; }
 .tracker-badges span { padding: 6px 9px; border: 1px solid var(--ink); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.run-card-copy { position: relative; z-index: 1; flex: 1; }
+.fit-import { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 16px; padding: 0 16px; background: var(--lime); color: var(--ink); font-size: 11px; font-weight: 900; cursor: pointer; }
+.fit-import input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.fit-import:focus-within { outline: 3px solid var(--orange); outline-offset: 2px; }
+.fit-import.disabled { opacity: .55; cursor: wait; }
+.fit-result { display: grid; grid-template-columns: repeat(3, minmax(115px, 1fr)); gap: 1px; margin-top: 14px; }
+.fit-result > div { min-height: 62px; padding: 10px 12px; background: var(--ink); color: white; display: grid; align-content: space-between; gap: 7px; }
+.fit-result small { color: rgba(255,255,255,.48); font-size: 7px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+.fit-result strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+.fit-result .primary strong { color: var(--lime); }
 
 .content-section { min-height: 780px; }
+.weekly-dashboard { background: var(--paper); }
+.weekly-kpis { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); margin-bottom: 24px; }
+.weekly-kpis > div { min-height: 135px; padding: 20px; border-right: 1px solid var(--line); display: grid; align-content: space-between; gap: 10px; }
+.weekly-kpis > div:last-child { border-right: 0; }
+.weekly-kpis .highlight { background: var(--ink); color: white; }
+.weekly-kpis small { font-size: 8px; font-weight: 900; letter-spacing: .13em; }
+.weekly-kpis strong { font-size: clamp(28px, 4vw, 50px); line-height: 1; letter-spacing: -.05em; }
+.weekly-kpis span { color: #74756d; font-size: 9px; }
+.weekly-kpis .highlight span { color: rgba(255,255,255,.55); }
+.week-calendar { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--line); margin-bottom: 28px; }
+.calendar-day { min-height: 125px; padding: 13px; border-right: 1px solid var(--line); display: grid; align-content: space-between; gap: 10px; }
+.calendar-day:last-child { border-right: 0; }
+.calendar-day > small { color: #77786f; font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.calendar-day > strong { font: italic 31px Georgia, serif; }
+.calendar-day.trained { background: white; box-shadow: inset 0 4px var(--lime); }
+.calendar-day > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.session-pill { padding: 5px 6px; background: var(--ink); color: white; font-size: 7px; font-weight: 900; }
+.session-pill.a { color: var(--lime); }
+.session-pill.b { color: var(--orange); }
+.rest-day { color: #aaa; }
+.coach-card { padding: clamp(22px, 4vw, 42px); background: var(--ink); color: white; }
+.coach-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.coach-heading > div { display: flex; align-items: center; gap: 16px; }
+.coach-mark { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(135deg, #4285f4, #a855f7, #fbbc04); font-weight: 900; }
+.coach-heading small { color: var(--lime); font-size: 8px; font-weight: 900; letter-spacing: .13em; }
+.coach-heading h3 { margin: 5px 0 0; font-size: 21px; }
+.coach-heading button { min-height: 42px; padding: 0 16px; border: 0; background: var(--lime); font-weight: 900; cursor: pointer; }
+.coach-heading button:disabled { opacity: .55; cursor: wait; }
+.coach-response, .coach-empty { max-width: 850px; margin-top: 25px; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.65; }
+.coach-response p { margin: 0 0 12px; }
+.coach-empty small { color: var(--orange); }
+.secondary-technique { margin-top: 18px; padding: 9px 0; border: 0; background: transparent; color: #66675f; font-size: 10px; font-weight: 900; cursor: pointer; }
 .progress-summary { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); margin-bottom: 45px; }
 .progress-summary > div { min-height: 128px; padding: 22px; border-right: 1px solid var(--line); display: grid; align-content: space-between; }
 .progress-summary > div:last-child { border-right: 0; }
@@ -251,6 +320,7 @@ footer p, footer small { margin: 0; color: rgba(255,255,255,.52); font-size: 11p
   .login-visual { display: none; }
   .topbar { height: 62px; padding: 0 20px; }
   .desktop-nav, .week-counter span { display: none; }
+  .technique-link { display: none; }
   .week-counter strong { font-size: 17px; }
   .mobile-tabs { display: grid; grid-template-columns: repeat(3, 1fr); position: sticky; top: 62px; z-index: 19; background: var(--paper); border-bottom: 1px solid var(--line); }
   .mobile-tabs button { padding: 15px 6px; }
@@ -263,6 +333,7 @@ footer p, footer small { margin: 0; color: rgba(255,255,255,.52); font-size: 11p
   .log-title-row h2 { font-size: 39px; }
   .session-meta { grid-template-columns: 1fr 1fr; }
   .session-meta label:first-child { grid-column: 1 / -1; }
+  .notes-upload-row { grid-template-columns: 1fr; }
   .exercise-log-head, .exercise-entry { grid-template-columns: minmax(0, 1fr) 85px 39px; gap: 7px; }
   .exercise-log-head { padding-left: 0; }
   .exercise-name { grid-template-columns: 1fr; }
@@ -273,8 +344,19 @@ footer p, footer small { margin: 0; color: rgba(255,255,255,.52); font-size: 11p
   .express-instructions span { text-align: left; }
   .weight-input { padding: 0 6px; }
   .check-control span { width: 34px; }
+  .plank-timer { margin-left: 0; padding: 13px; grid-template-columns: 1fr auto; gap: 12px; }
+  .timer-track { grid-column: 1 / -1; grid-row: 2; }
+  .timer-readout { gap: 8px; }
+  .timer-readout strong { min-width: 48px; font-size: 26px; }
+  .timer-actions button { min-width: 66px; padding: 0 9px; }
   .run-form-card { padding: 22px; display: grid; }
   .run-orbit { width: 90px; height: 90px; }
+  .fit-result { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .weekly-kpis { grid-template-columns: 1fr 1fr; }
+  .weekly-kpis > div { min-height: 115px; border-bottom: 1px solid var(--line); }
+  .week-calendar { grid-template-columns: repeat(7, minmax(74px, 1fr)); overflow-x: auto; }
+  .calendar-day { min-height: 110px; }
+  .coach-heading { align-items: flex-start; display: grid; }
   .progress-summary { grid-template-columns: 1fr 1fr; }
   .progress-summary > div { min-height: 105px; border-bottom: 1px solid var(--line); }
   .progress-summary > div:nth-child(2) { border-right: 0; }

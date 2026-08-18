@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Decoder, Stream } from "@garmin/fitsdk";
 
-type RoutineId = "A" | "B" | "C" | "RUN";
-type TabId = "week" | "progress" | "guide";
+type RoutineId = "A" | "B" | "C" | "EXPRESS" | "RUN";
+type TabId = "week" | "summary" | "progress" | "guide";
 
 type Exercise = {
   id: string;
@@ -35,7 +36,23 @@ type WorkoutSession = {
   rpe: number | null;
   exercises: ExerciseResult[];
   notes: string;
+  fitData: Partial<ImportedRun>;
   createdAt: string;
+};
+
+type ImportedRun = {
+  name: string;
+  date: string;
+  distanceKm: number;
+  durationMinutes: number;
+  elapsedMinutes: number;
+  pace: number | null;
+  elevation: number;
+  descent: number | null;
+  heartRate: number | null;
+  maxHeartRate: number | null;
+  cadence: number | null;
+  calories: number | null;
 };
 
 const exercisesA: Exercise[] = [
@@ -215,6 +232,51 @@ const exercisesB: Exercise[] = [
 
 const exercisesC: Exercise[] = [
   {
+    id: "runner-hip-thrust", name: "Hip thrust", shortName: "Hip thrust", sets: "3 × 10–12", rest: "75 s", weighted: true,
+    focus: "Glutis i extensió de maluc", setup: "Recolza la part alta de l’esquena en un banc estable, peus a terra i càrrega centrada sobre la pelvis.",
+    execution: "Eleva els malucs empenyent amb els talons fins a alinear genolls, malucs i espatlles. Baixa amb control.",
+    cues: ["Barbeta lleugerament recollida", "Costelles controlades", "Pausa a dalt"], mistakes: ["Arquejar la zona lumbar", "Empènyer amb les puntes", "Pujar més enllà de l’alineació"],
+  },
+  {
+    id: "runner-leg-curl", name: "Curl femoral en màquina", shortName: "Curl femoral", sets: "3 × 10–12", rest: "60 s", weighted: true,
+    focus: "Isquiotibials en flexió de genoll", setup: "Ajusta la màquina perquè l’eix coincideixi amb el genoll i fixa bé la pelvis.",
+    execution: "Flexiona els genolls fins on mantinguis la pelvis estable i torna lentament sense deixar caure el pes.",
+    cues: ["Pelvis quieta", "Recorregut controlat", "Baixada lenta"], mistakes: ["Aixecar els malucs", "Fer rebots", "Tallar la tornada"],
+  },
+  {
+    id: "runner-lateral-raise", name: "Elevacions laterals", shortName: "Elevacions laterals", sets: "3 × 12–15", rest: "45 s", weighted: true,
+    focus: "Deltoide lateral", setup: "Dempeus, manuelles als costats, colzes suaument flexionats i tronc estable.",
+    execution: "Eleva els braços fins aproximadament l’altura de les espatlles i baixa durant dos segons.",
+    cues: ["Espatlles lluny de les orelles", "Colzes guien el moviment", "Poc impuls"], mistakes: ["Encongir les espatlles", "Balancejar el tronc", "Carregar massa"],
+  },
+  {
+    id: "runner-face-pull", name: "Face pull en politja", shortName: "Face pull", sets: "3 × 12–15", rest: "45 s", weighted: true,
+    focus: "Deltoide posterior i control escapular", setup: "Politja a l’altura de la cara, corda agafada amb els polzes enrere i cos estable.",
+    execution: "Porta la corda cap als ulls obrint les mans i ajuntant suaument els omòplats.",
+    cues: ["Colzes alts", "Coll llarg", "Pausa al final"], mistakes: ["Arquejar l’esquena", "Estirar només amb els bíceps", "Encongir les espatlles"],
+  },
+  {
+    id: "runner-copenhagen", name: "Planxa Copenhagen", shortName: "Copenhagen", sets: "2 × 20–30 s / costat", rest: "30 s", weighted: false,
+    focus: "Adductors i estabilitat lateral", setup: "De costat, colze sota l’espatlla i cama superior recolzada sobre un banc; comença amb el genoll si cal.",
+    execution: "Eleva la pelvis i mantén el cos alineat mentre la cama inferior acompanya sense tocar a terra.",
+    cues: ["Cos en línia", "Pelvis alta", "Respira amb control"], mistakes: ["Deixar caure el maluc", "Girar el tronc", "Començar amb una palanca massa llarga"],
+  },
+  {
+    id: "runner-tibialis", name: "Elevacions de tibial anterior", shortName: "Tibial anterior", sets: "3 × 15–20", rest: "30 s", weighted: false,
+    focus: "Tibial anterior i control del turmell", setup: "Recolza l’esquena a una paret, peus una mica avançats i talons ferms a terra.",
+    execution: "Eleva les puntes dels peus tant com puguis, pausa i baixa lentament sense moure els talons.",
+    cues: ["Talons a terra", "Recorregut complet", "Ritme lent"], mistakes: ["Fer rebots", "Flexionar massa els genolls", "Girar els peus"],
+  },
+  {
+    id: "runner-farmer-carry", name: "Farmer carry", shortName: "Farmer carry", sets: "3 × 30–40 m", rest: "60 s", weighted: true,
+    focus: "Agafada, tronc i postura", setup: "Agafa dues manuelles pesants, posa’t alt i deixa els braços llargs al costat del cos.",
+    execution: "Camina amb passos curts i controlats mantenint el tronc vertical i les espatlles estables.",
+    cues: ["Camina alt", "Abdomen actiu", "Passos tranquils"], mistakes: ["Inclinar-se", "Encongir les espatlles", "Córrer amb la càrrega"],
+  },
+];
+
+const exercisesExpress: Exercise[] = [
+  {
     id: "express-push-up",
     name: "Flexions (push-ups)",
     shortName: "Flexions",
@@ -329,12 +391,13 @@ const exercisesC: Exercise[] = [
 ];
 
 const routines = {
-  A: { label: "Full Body A", day: "Dimarts", accent: "lime", exercises: exercisesA },
-  B: { label: "Full Body B", day: "Dijous", accent: "orange", exercises: exercisesB },
-  C: { label: "Express", day: "Opcional", accent: "express", exercises: exercisesC },
+  A: { label: "Full Body A", day: "Dimarts", accent: "lime", exercises: exercisesA, description: "Base global: sentadilla, empenta de pit, rem i estabilitat del tronc." },
+  B: { label: "Full Body B", day: "Dijous", accent: "orange", exercises: exercisesB, description: "Cadena posterior: frontissa de maluc, empenta vertical, jaló i treball unilateral." },
+  C: { label: "Full Body C", day: "Opcional", accent: "cream", exercises: exercisesC, description: "Complement per córrer: glutis, isquios, adductors, espatlla, tibial i càrregues." },
+  EXPRESS: { label: "Express", day: "Opcional", accent: "express", exercises: exercisesExpress, description: "Circuit curt de cos complet per als dies amb poc temps." },
 };
 
-const allExercises = [...exercisesA, ...exercisesB];
+const allExercises = [...exercisesA, ...exercisesB, ...exercisesC];
 
 const alternatives: Record<string, { name: string; note: string }[]> = {
   "goblet-squat": [
@@ -424,11 +487,14 @@ const alternatives: Record<string, { name: string; note: string }[]> = {
 };
 
 function exerciseVisual(exercise: Exercise) {
+  if (exercise.id.startsWith("runner-")) {
+    return { backgroundImage: "radial-gradient(circle at 30% 25%, #d9ff43 0 12%, transparent 13%), linear-gradient(145deg, #26271f, #55584a)", aspectRatio: "3 / 4" };
+  }
   const aIndex = exercisesA.findIndex((item) => item.id === exercise.id);
   const isA = aIndex >= 0;
   const bIndex = exercisesB.findIndex((item) => item.id === exercise.id);
   const isB = bIndex >= 0;
-  const index = isA ? aIndex : isB ? bIndex : exercisesC.findIndex((item) => item.id === exercise.id);
+  const index = isA ? aIndex : isB ? bIndex : exercisesExpress.findIndex((item) => item.id === exercise.id);
   const columns = isB ? 3 : 4;
   const column = index % columns;
   const row = Math.floor(index / columns);
@@ -450,12 +516,65 @@ function displayDate(date: string) {
   return new Intl.DateTimeFormat("ca-ES", { day: "numeric", month: "short", year: "numeric" }).format(new Date(`${date}T12:00:00`));
 }
 
+function displayDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return hours > 0 ? `${hours} h ${remainingMinutes} min` : `${remainingMinutes} min`;
+}
+
+function displayPace(secondsPerKm: number) {
+  return `${Math.floor(secondsPerKm / 60)}:${String(secondsPerKm % 60).padStart(2, "0")} min/km`;
+}
+
 function routineLabel(id: RoutineId) {
   return id === "RUN" ? "Running lliure" : routines[id].label;
 }
 
-function emptyResults(routine: "A" | "B" | "C"): ExerciseResult[] {
+function emptyResults(routine: "A" | "B" | "C" | "EXPRESS"): ExerciseResult[] {
   return routines[routine].exercises.map((exercise) => ({ exerciseId: exercise.id, weight: null, reps: exercise.sets, completed: false }));
+}
+
+function PlankTimer() {
+  const duration = 40;
+  const [seconds, setSeconds] = useState(duration);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    if (!running || seconds === 0) return;
+    const interval = window.setInterval(() => {
+      setSeconds((current) => {
+        if (current <= 1) {
+          setRunning(false);
+          if ("vibrate" in navigator) navigator.vibrate([180, 100, 180]);
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [running, seconds]);
+
+  function reset() {
+    setRunning(false);
+    setSeconds(duration);
+  }
+
+  const finished = seconds === 0;
+  return (
+    <div className={finished ? "plank-timer finished" : "plank-timer"}>
+      <div className="timer-readout" aria-live="polite">
+        <span>COMPTE ENRERE</span>
+        <strong>{seconds}<small>s</small></strong>
+      </div>
+      <div className="timer-track" aria-hidden="true"><span style={{ width: `${(seconds / duration) * 100}%` }} /></div>
+      <div className="timer-actions">
+        <button type="button" onClick={() => setRunning((current) => !current)} disabled={finished}>
+          {running ? "Pausa" : seconds === duration ? "Inicia" : "Continua"}
+        </button>
+        <button type="button" className="timer-reset" onClick={reset}>Reinicia</button>
+      </div>
+    </div>
+  );
 }
 
 async function fetchSessions(): Promise<WorkoutSession[]> {
@@ -478,6 +597,12 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [importedRun, setImportedRun] = useState<ImportedRun | null>(null);
+  const [importingFit, setImportingFit] = useState(false);
+  const [coachText, setCoachText] = useState("");
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [coachConfigured, setCoachConfigured] = useState<boolean | null>(null);
+  const workoutFormRef = useRef<HTMLElement>(null);
 
   async function loadSessions() {
     try {
@@ -506,18 +631,73 @@ export default function Home() {
     };
   }, []);
 
+  async function importFitFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImportingFit(true);
+    setMessage("");
+    try {
+      if (file.size > 20 * 1024 * 1024) throw new Error("El fitxer FIT és massa gran.");
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const stream = Stream.fromByteArray(Array.from(bytes));
+      const decoder = new Decoder(stream);
+      if (!decoder.isFIT()) throw new Error("Aquest fitxer no és un entrenament FIT vàlid.");
+      const { messages } = decoder.read();
+      const session = messages.sessionMesgs?.[0];
+      if (!session) throw new Error("No he trobat les dades de la sessió dins del FIT.");
+
+      const distanceKm = Number(session.totalDistance ?? 0) / 1000;
+      const durationSeconds = Number(session.totalTimerTime ?? session.totalElapsedTime ?? 0);
+      const elapsedSeconds = Number(session.totalElapsedTime ?? durationSeconds);
+      const start = session.startTime instanceof Date ? session.startTime : new Date(String(session.startTime ?? ""));
+      if (!durationSeconds || Number.isNaN(start.getTime())) throw new Error("Al FIT li falten el temps o la data.");
+      if (routine === "RUN" && !distanceKm) throw new Error("Aquest FIT no conté distància de running.");
+      const activity: ImportedRun = {
+        name: file.name.replace(/\.fit$/i, ""),
+        date: start.toISOString().slice(0, 10),
+        distanceKm: Math.round(distanceKm * 100) / 100,
+        durationMinutes: Math.max(1, Math.round(durationSeconds / 60)),
+        elapsedMinutes: Math.max(1, Math.round(elapsedSeconds / 60)),
+        pace: distanceKm > 0 ? Math.round(durationSeconds / distanceKm) : null,
+        elevation: Math.round(Number(session.totalAscent ?? 0)),
+        descent: session.totalDescent === undefined ? null : Math.round(Number(session.totalDescent)),
+        heartRate: session.avgHeartRate ? Math.round(Number(session.avgHeartRate)) : null,
+        maxHeartRate: session.maxHeartRate ? Math.round(Number(session.maxHeartRate)) : null,
+        cadence: session.avgRunningCadence || session.avgCadence ? Math.round(Number(session.avgRunningCadence ?? session.avgCadence)) : null,
+        calories: session.totalCalories === undefined ? null : Math.round(Number(session.totalCalories)),
+      };
+      setImportedRun(activity);
+      setDate(activity.date);
+      setDuration(String(activity.durationMinutes));
+      if (routine === "RUN") {
+        const paceMinutes = activity.pace ? displayPace(activity.pace) : "ritme no disponible";
+        setNotes(`Suunto · ${activity.distanceKm.toFixed(2)} km · ${paceMinutes} · +${activity.elevation} m${activity.heartRate ? ` · ${activity.heartRate} ppm` : ""}`);
+      }
+      setMessage("Entrenament de Suunto importat. Revisa’l i desa la sessió.");
+    } catch (reason) {
+      setMessage(reason instanceof Error ? reason.message : "No s’ha pogut llegir el fitxer FIT.");
+    } finally {
+      setImportingFit(false);
+      event.target.value = "";
+    }
+  }
+
   function switchRoutine(next: RoutineId) {
     setRoutine(next);
+    setImportedRun(null);
     setMessage("");
     setNotes("");
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      window.requestAnimationFrame(() => workoutFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
     if (next === "RUN") {
       setDuration("65");
       setRpe("5");
       setResults([]);
       return;
     }
-    setDuration(next === "C" ? "30" : "35");
-    setRpe(next === "C" ? "7" : "6");
+    setDuration(next === "EXPRESS" ? "30" : next === "C" ? "45" : "35");
+    setRpe(next === "EXPRESS" ? "7" : "6");
     const previous = sessions.find((session) => session.routine === next);
     setResults(
       emptyResults(next).map((result) => {
@@ -525,6 +705,22 @@ export default function Home() {
         return old ? { ...result, weight: old.weight } : result;
       }),
     );
+  }
+
+  async function askCoach() {
+    setCoachLoading(true);
+    setCoachText("");
+    try {
+      const response = await fetch("/api/coach", { method: "POST" });
+      const body = await response.json() as { analysis?: string; configured?: boolean; error?: string };
+      setCoachConfigured(body.configured ?? response.ok);
+      if (!response.ok || !body.analysis) throw new Error(body.error ?? "No s’ha pogut generar la valoració.");
+      setCoachText(body.analysis);
+    } catch (reason) {
+      setCoachText(reason instanceof Error ? reason.message : "No s’ha pogut generar la valoració.");
+    } finally {
+      setCoachLoading(false);
+    }
   }
 
   function updateResult(exerciseId: string, patch: Partial<ExerciseResult>) {
@@ -546,6 +742,7 @@ export default function Home() {
           rpe: Number(rpe) || null,
           exercises: routine === "RUN" ? [] : results,
           notes,
+          fitData: importedRun ?? {},
         }),
       });
       if (!response.ok) throw new Error("No s’ha pogut desar");
@@ -582,8 +779,8 @@ export default function Home() {
     monday.setHours(0, 0, 0, 0);
     const thisWeek = sessions.filter((session) => new Date(`${session.sessionDate}T12:00:00`) >= monday);
     return {
-      base: thisWeek.filter((session) => session.routine !== "C").length,
-      express: thisWeek.filter((session) => session.routine === "C").length,
+      base: thisWeek.filter((session) => session.routine !== "EXPRESS").length,
+      express: thisWeek.filter((session) => session.routine === "EXPRESS").length,
     };
   }, [sessions]);
 
@@ -593,6 +790,25 @@ export default function Home() {
     const atBest = tracked.filter((row) => row.previous !== null && row.latest === row.best).length;
     return { tracked: tracked.length, improved, atBest };
   }, [progressRows]);
+
+  const currentWeek = useMemo(() => {
+    const today = new Date();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    monday.setHours(12, 0, 0, 0);
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + index);
+      const key = day.toISOString().slice(0, 10);
+      return { date: day, key, sessions: sessions.filter((session) => session.sessionDate === key) };
+    });
+    return { days, sessions: days.flatMap((day) => day.sessions) };
+  }, [sessions]);
+
+  const weeklyTotals = useMemo(() => ({
+    minutes: currentWeek.sessions.reduce((total, session) => total + (session.durationMinutes ?? 0), 0),
+    calories: currentWeek.sessions.reduce((total, session) => total + Number(session.fitData?.calories ?? 0), 0),
+  }), [currentWeek]);
 
   const activeExercises = routine === "RUN" ? [] : routines[routine].exercises;
 
@@ -604,17 +820,17 @@ export default function Home() {
           <span>ENTRENA</span>
         </a>
         <nav className="desktop-nav" aria-label="Navegació principal">
-          <button className={tab === "week" ? "active" : ""} onClick={() => setTab("week")}>Setmana</button>
+          <button className={tab === "week" ? "active" : ""} onClick={() => setTab("week")}>Entrenar</button>
+          <button className={tab === "summary" ? "active" : ""} onClick={() => setTab("summary")}>Calendari</button>
           <button className={tab === "progress" ? "active" : ""} onClick={() => setTab("progress")}>Progrés</button>
-          <button className={tab === "guide" ? "active" : ""} onClick={() => setTab("guide")}>Tècnica</button>
         </nav>
-        <div className="week-counter"><strong>{Math.min(weeklyProgress.base, 3)}/3</strong><span>aquesta setmana</span>{weeklyProgress.express > 0 && <em>+{weeklyProgress.express} Express</em>}</div>
+        <div className="topbar-actions"><button className="technique-link" onClick={() => setTab("guide")}>Tècnica</button><div className="week-counter"><strong>{Math.min(weeklyProgress.base, 3)}/3</strong><span>aquesta setmana</span>{weeklyProgress.express > 0 && <em>+{weeklyProgress.express} Express</em>}</div></div>
       </header>
 
       <nav className="mobile-tabs" aria-label="Seccions de l’app">
-        <button className={tab === "week" ? "active" : ""} onClick={() => setTab("week")}>Setmana</button>
+        <button className={tab === "week" ? "active" : ""} onClick={() => setTab("week")}>Entrenar</button>
+        <button className={tab === "summary" ? "active" : ""} onClick={() => setTab("summary")}>Calendari</button>
         <button className={tab === "progress" ? "active" : ""} onClick={() => setTab("progress")}>Progrés</button>
-        <button className={tab === "guide" ? "active" : ""} onClick={() => setTab("guide")}>Tècnica</button>
       </nav>
 
       {tab === "week" && (
@@ -622,45 +838,50 @@ export default function Home() {
           <section className="plan-panel" aria-labelledby="weekly-plan-title">
             <div className="section-heading">
               <div><span>01</span><h2 id="weekly-plan-title">Planificació setmanal</h2></div>
-              <p>Tres sessions base i un Full Body C Express opcional per a les setmanes en què et vingui de gust sumar.</p>
+              <p>Tres sessions Full Body complementàries, running lliure i un circuit Express per als dies amb poc temps.</p>
             </div>
 
             <div className="schedule">
               <button className={routine === "A" ? "schedule-card selected lime" : "schedule-card"} onClick={() => switchRoutine("A")}>
                 <span className="day-index">01</span>
-                <div><small>DIMARTS</small><strong>15’ suau + Full Body A</strong><p>RPE 3–4 · 7 exercicis</p></div>
+                <div><small>FULL BODY A · BASE GLOBAL</small><strong>15’ suau + Full Body A</strong><p>{routines.A.description}</p></div>
                 <span className="arrow">↗</span>
               </button>
               <button className={routine === "B" ? "schedule-card selected orange" : "schedule-card"} onClick={() => switchRoutine("B")}>
                 <span className="day-index">02</span>
-                <div><small>DIJOUS</small><strong>15’ suau + Full Body B</strong><p>RPE 3–4 · 6 exercicis</p></div>
+                <div><small>FULL BODY B · CADENA POSTERIOR</small><strong>15’ suau + Full Body B</strong><p>{routines.B.description}</p></div>
                 <span className="arrow">↗</span>
               </button>
               <button className={routine === "RUN" ? "schedule-card selected cream" : "schedule-card"} onClick={() => switchRoutine("RUN")}>
                 <span className="day-index">03</span>
-                <div><small>DISSABTE O DIUMENGE</small><strong>Running lliure</strong><p>50–80 min · registre amb Suunto / Strava</p></div>
+                <div><small>DISSABTE O DIUMENGE</small><strong>Running lliure</strong><p>50–80 min · registre amb Suunto</p></div>
                 <span className="arrow">↗</span>
               </button>
-              <button className={routine === "C" ? "schedule-card selected express" : "schedule-card"} onClick={() => switchRoutine("C")}>
+              <button className={routine === "C" ? "schedule-card selected lime" : "schedule-card"} onClick={() => switchRoutine("C")}>
+                <span className="day-index">C</span>
+                <div><small>FULL BODY C · RUNNER RESILIENCE</small><strong>Full Body C</strong><p>{routines.C.description}</p></div>
+                <span className="arrow">↗</span>
+              </button>
+              <button className={routine === "EXPRESS" ? "schedule-card selected express" : "schedule-card"} onClick={() => switchRoutine("EXPRESS")}>
                 <span className="day-index">+</span>
-                <div><small>OPCIONAL · QUAN ET VAGI BÉ</small><strong>Full Body C · Express</strong><p>30 min · sense running · 8 exercicis</p></div>
+                <div><small>OPCIONAL · QUAN TENS POC TEMPS</small><strong>Full Body Express</strong><p>{routines.EXPRESS.description}</p></div>
                 <span className="arrow">↗</span>
               </button>
             </div>
 
             <aside className="run-note">
               <span>RUNNING</span>
-              <p><strong>Entrenament completament lliure.</strong> Guarda ritme, distància, desnivell i recorregut a Suunto i Strava; aquí només cal que desis la sessió si vols que compti al teu 3/3.</p>
+              <p><strong>Entrenament completament lliure.</strong> Guarda’l al teu Suunto i exporta el fitxer FIT per portar-ne les dades a ENTRENA.</p>
             </aside>
           </section>
 
-          <section className="log-panel" aria-labelledby="log-title">
+          <section className="log-panel" aria-labelledby="log-title" ref={workoutFormRef}>
             <div className="log-title-row">
               <div>
                 <p className="eyebrow">REGISTRA LA SESSIÓ</p>
                 <h2 id="log-title">{routineLabel(routine)}</h2>
               </div>
-              <span className={`routine-badge ${routine === "A" ? "lime" : routine === "B" ? "orange" : routine === "C" ? "express" : "cream"}`}>{routine === "RUN" ? "03" : routine}</span>
+              <span className={`routine-badge ${routine === "A" ? "lime" : routine === "B" ? "orange" : routine === "EXPRESS" ? "express" : "cream"}`}>{routine === "RUN" ? "03" : routine === "EXPRESS" ? "+" : routine}</span>
             </div>
 
             <form onSubmit={saveWorkout}>
@@ -672,12 +893,12 @@ export default function Home() {
 
               {routine !== "RUN" && (
                 <div className="exercise-log">
-                  {routine === "C" && <div className="express-instructions"><strong>Circuit Express</strong><span>Fes 2–3 rondes · 20–30 s entre exercicis · 60 s entre rondes</span></div>}
+                  {routine === "EXPRESS" && <div className="express-instructions"><strong>Circuit Express</strong><span>Fes 2–3 rondes · 20–30 s entre exercicis · 60 s entre rondes</span></div>}
                   <div className="exercise-log-head"><span>Exercici</span><span>Pes</span><span>Fet</span></div>
                   {activeExercises.map((exercise, index) => {
                     const result = results.find((entry) => entry.exerciseId === exercise.id);
                     return (
-                      <div className="exercise-entry" key={exercise.id}>
+                      <div className={exercise.shortName === "Planxa" ? "exercise-entry has-timer" : "exercise-entry"} key={exercise.id}>
                         <button type="button" className="exercise-name" onClick={() => setSelectedExercise(exercise)} aria-label={`Veure tècnica de ${exercise.name}`}>
                           <span>{String(index + 1).padStart(2, "0")}</span>
                           <div><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.note ?? `${exercise.rest} descans`}</small></div>
@@ -701,6 +922,7 @@ export default function Home() {
                           <input type="checkbox" checked={result?.completed ?? false} onChange={(event) => updateResult(exercise.id, { completed: event.target.checked })} aria-label={`Marcar ${exercise.name} com completat`} />
                           <span>✓</span>
                         </label>
+                        {exercise.shortName === "Planxa" && <PlankTimer />}
                       </div>
                     );
                   })}
@@ -710,16 +932,91 @@ export default function Home() {
               {routine === "RUN" && (
                 <div className="run-form-card">
                   <span className="run-orbit">50–80<br /><strong>MIN</strong></span>
-                  <div><h3>Entrenament lliure</h3><p>Tu tries ritme, terreny i objectiu. El detall complet de la sessió queda registrat al teu rellotge.</p><div className="tracker-badges"><span>SUUNTO</span><span>STRAVA</span></div></div>
+                  <div className="run-card-copy">
+                    <h3>Entrenament lliure</h3>
+                    <p>Tu tries ritme, terreny i objectiu. A Suunto, obre l’activitat, toca els tres punts i selecciona «Exportar com a FIT».</p>
+                    <div className="tracker-badges"><span>SUUNTO</span><span>→</span><span>FIT</span><span>→</span><span>ENTRENA</span></div>
+                    <label className={importingFit ? "fit-import disabled" : "fit-import"}>
+                      <span>{importingFit ? "Llegint entrenament…" : "Importar fitxer de Suunto"}</span>
+                      <input type="file" accept=".fit,application/octet-stream" onChange={importFitFile} disabled={importingFit} />
+                    </label>
+                    {importedRun && (
+                      <div className="fit-result">
+                        <div><small>Data</small><strong>{displayDate(importedRun.date)}</strong></div>
+                        <div className="primary"><small>Distància</small><strong>{importedRun.distanceKm.toFixed(2)} km</strong></div>
+                        <div><small>Temps actiu</small><strong>{displayDuration(importedRun.durationMinutes)}</strong></div>
+                        {importedRun.elapsedMinutes > importedRun.durationMinutes + 1 && <div><small>Temps total</small><strong>{displayDuration(importedRun.elapsedMinutes)}</strong></div>}
+                        {importedRun.pace && <div><small>Ritme mitjà</small><strong>{displayPace(importedRun.pace)}</strong></div>}
+                        <div><small>Desnivell positiu</small><strong>+{importedRun.elevation} m</strong></div>
+                        {importedRun.descent !== null && <div><small>Desnivell negatiu</small><strong>−{importedRun.descent} m</strong></div>}
+                        {importedRun.heartRate && <div><small>Pols mitjà</small><strong>{importedRun.heartRate} ppm</strong></div>}
+                        {importedRun.maxHeartRate && <div><small>Pols màxim</small><strong>{importedRun.maxHeartRate} ppm</strong></div>}
+                        {importedRun.cadence && <div><small>Cadència</small><strong>{importedRun.cadence} pas/min</strong></div>}
+                        {importedRun.calories !== null && <div><small>Energia</small><strong>{importedRun.calories} kcal</strong></div>}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              <label className="notes-field">Notes de la sessió<textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Sensacions, molèsties, ajustos per a la pròxima..." /></label>
+              <div className="notes-upload-row">
+                <label className="notes-field">Notes de la sessió<textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Sensacions, molèsties, ajustos per a la pròxima... Aquesta informació servirà per a l’anàlisi amb IA." /></label>
+                {routine !== "RUN" && (
+                  <aside className="strength-fit-upload">
+                    <div><small>DADES DEL RELLOTGE</small><strong>Importa el FIT de força</strong><p>Afegeix temps, calories i pulsacions a aquesta sessió.</p></div>
+                    <label className={importingFit ? "fit-import disabled" : "fit-import"}>
+                      <span>{importingFit ? "Llegint…" : "Pujar fitxer FIT"}</span>
+                      <input type="file" accept=".fit,application/octet-stream" onChange={importFitFile} disabled={importingFit} />
+                    </label>
+                    {importedRun && (
+                      <div className="strength-fit-result">
+                        <span><small>Temps</small><strong>{displayDuration(importedRun.durationMinutes)}</strong></span>
+                        {importedRun.calories !== null && <span><small>Energia</small><strong>{importedRun.calories} kcal</strong></span>}
+                        {importedRun.heartRate && <span><small>Pols mitjà</small><strong>{importedRun.heartRate} ppm</strong></span>}
+                        {importedRun.maxHeartRate && <span><small>Pols màxim</small><strong>{importedRun.maxHeartRate} ppm</strong></span>}
+                      </div>
+                    )}
+                  </aside>
+                )}
+              </div>
               <button className="save-button" type="submit" disabled={saving}><span>{saving ? "Desant..." : "Desar sessió"}</span><span>→</span></button>
               {message && <p className={message.startsWith("Sessió") ? "form-message success" : "form-message"} role="status">{message}</p>}
             </form>
           </section>
         </div>
+      )}
+
+      {tab === "summary" && (
+        <section className="content-section weekly-dashboard">
+          <div className="section-heading wide">
+            <div><span>02</span><h2>La teva setmana</h2></div>
+            <p>Una vista clara del que has fet i una valoració que evoluciona amb el teu historial, els FIT i els comentaris.</p>
+          </div>
+
+          <div className="weekly-kpis">
+            <div className="highlight"><small>OBJECTIU SETMANAL</small><strong>{Math.min(weeklyProgress.base, 3)}/3</strong><span>{Math.min(Math.round((weeklyProgress.base / 3) * 100), 100)}% completat{weeklyProgress.base > 3 ? ` · +${weeklyProgress.base - 3} ${weeklyProgress.base - 3 === 1 ? "sessió extra" : "sessions extra"}` : ""} · {displayDate(currentWeek.days[0].key)} — {displayDate(currentWeek.days[6].key)}</span></div>
+            <div><small>ENTRENAMENTS</small><strong>{currentWeek.sessions.length}</strong><span>aquesta setmana</span></div>
+            <div><small>TOTAL HISTÒRIC</small><strong>{sessions.length}</strong><span>sessions desades</span></div>
+            <div><small>TEMPS SETMANAL</small><strong>{displayDuration(weeklyTotals.minutes)}</strong><span>{weeklyTotals.calories > 0 ? `${weeklyTotals.calories} kcal registrades` : "afegeix FIT per veure kcal"}</span></div>
+          </div>
+
+          <div className="week-calendar">
+            {currentWeek.days.map((day) => (
+              <article className={day.sessions.length ? "calendar-day trained" : "calendar-day"} key={day.key}>
+                <small>{new Intl.DateTimeFormat("ca-ES", { weekday: "short" }).format(day.date).replace(".", "")}</small>
+                <strong>{day.date.getDate()}</strong>
+                <div>{day.sessions.length === 0 ? <span className="rest-day">—</span> : day.sessions.map((session) => <span className={`session-pill ${session.routine.toLowerCase()}`} key={session.id}>{session.routine === "RUN" ? "RUN" : session.routine}</span>)}</div>
+              </article>
+            ))}
+          </div>
+
+          <div className="coach-card">
+            <div className="coach-heading"><div><span className="coach-mark">G</span><div><small>ENTRENADOR PERSONAL · GEMINI</small><h3>Valoració del teu progrés</h3></div></div><button type="button" onClick={askCoach} disabled={coachLoading}>{coachLoading ? "Analitzant…" : coachText ? "Actualitzar valoració" : "Analitzar la setmana"}</button></div>
+            {coachText ? <div className="coach-response">{coachText.split("\n").filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div> : <div className="coach-empty"><p>Gemini analitzarà les sessions, les càrregues, l’RPE, les dades FIT i els teus comentaris per donar-te una valoració personalitzada.</p>{coachConfigured === false && <small>Cal afegir la clau de Google AI Studio per activar-lo.</small>}</div>}
+          </div>
+
+          <button className="secondary-technique" type="button" onClick={() => setTab("guide")}>Consultar la guia de tècnica →</button>
+        </section>
       )}
 
       {tab === "progress" && (
@@ -742,6 +1039,7 @@ export default function Home() {
                 <div className="progress-groups">
                   <ProgressGroup title="Full Body A" day="Dimarts" accent="lime" rows={progressRows.filter((row) => exercisesA.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
                   <ProgressGroup title="Full Body B" day="Dijous" accent="orange" rows={progressRows.filter((row) => exercisesB.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
+                  <ProgressGroup title="Full Body C" day="Opcional" accent="lime" rows={progressRows.filter((row) => exercisesC.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
                 </div>
                 <aside className="history-card">
                   <p className="eyebrow">ÚLTIMES SESSIONS</p>
@@ -776,8 +1074,12 @@ export default function Home() {
               {exercisesB.map((exercise, index) => <ExerciseGuideCard key={exercise.id} exercise={exercise} index={index + 1} onOpen={setSelectedExercise} />)}
             </div>
             <div>
-              <p className="guide-label"><span className="dot express" /> EXPRESS · OPCIONAL</p>
+              <p className="guide-label"><span className="dot lime" /> FULL BODY C · RUNNER RESILIENCE</p>
               {exercisesC.map((exercise, index) => <ExerciseGuideCard key={exercise.id} exercise={exercise} index={index + 1} onOpen={setSelectedExercise} />)}
+            </div>
+            <div>
+              <p className="guide-label"><span className="dot express" /> EXPRESS · OPCIONAL</p>
+              {exercisesExpress.map((exercise, index) => <ExerciseGuideCard key={exercise.id} exercise={exercise} index={index + 1} onOpen={setSelectedExercise} />)}
             </div>
           </div>
           <aside className="safety-note"><strong>Important</strong><p>La tècnica s’ha d’adaptar a la teva mobilitat i historial. Para si notes dolor agut, mareig o una sensació inusual, i consulta un professional qualificat si tens dubtes.</p></aside>
@@ -811,12 +1113,12 @@ export default function Home() {
               <div><h3>Punts clau</h3><ul>{selectedExercise.cues.map((cue) => <li key={cue}>{cue}</li>)}</ul></div>
               <div className="mistakes"><h3>Evita això</h3><ul>{selectedExercise.mistakes.map((mistake) => <li key={mistake}>{mistake}</li>)}</ul></div>
             </div>
-            <div className="alternatives-block">
+            {alternatives[selectedExercise.id] && <div className="alternatives-block">
               <div><p className="eyebrow">{selectedExercise.id.startsWith("express-") ? "SI VOLS CANVIAR-LO" : "SI ESTÀ OCUPAT"}</p><h3>Alternatives equivalents</h3></div>
               <div className="alternatives-grid">{alternatives[selectedExercise.id].map((alternative, index) => (
                 <div key={alternative.name}><span>0{index + 1}</span><strong>{alternative.name}</strong><p>{alternative.note}</p></div>
               ))}</div>
-            </div>
+            </div>}
             <button className="modal-done" onClick={() => setSelectedExercise(null)}>Entès, a entrenar</button>
           </section>
         </div>
@@ -829,7 +1131,7 @@ function ExerciseGuideCard({ exercise, index, onOpen }: { exercise: Exercise; in
   return (
     <button className="guide-card" onClick={() => onOpen(exercise)}>
       <span className="guide-thumb" style={exerciseVisual(exercise)}><i>{String(index).padStart(2, "0")}</i></span>
-      <div className="guide-card-copy"><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.focus}</small><em>2 alternatives disponibles</em></div>
+      <div className="guide-card-copy"><strong>{exercise.name}</strong><small>{exercise.sets} · {exercise.focus}</small>{alternatives[exercise.id] && <em>2 alternatives disponibles</em>}</div>
       <b>Veure tècnica →</b>
     </button>
   );

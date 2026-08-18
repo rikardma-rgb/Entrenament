@@ -1,0 +1,4 @@
+APP_PASSWORD=canvia-aquesta-contrasenya
+GEMINI_API_KEY=la-teva-clau-de-google-ai-studio
+GEMINI_MODEL=gemini-3.5-flash
+ATHLETE_PROFILE=Objectius, edat, experiència, disponibilitat, lesions o limitacions i preferències personals.

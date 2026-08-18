@@ -51,12 +51,14 @@ async function isAuthorized(request: Request, env: Env): Promise<boolean> {
   return safeEqual(cookie, await sessionToken(env.APP_PASSWORD));
 }
 
-function sessionCookie(token: string): string {
-  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_SECONDS}`;
+function sessionCookie(token: string, requestUrl: string): string {
+  const secure = new URL(requestUrl).protocol === "https:" ? "; Secure" : "";
+  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=${SESSION_SECONDS}`;
 }
 
-function expiredSessionCookie(): string {
-  return `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
+function expiredSessionCookie(requestUrl: string): string {
+  const secure = new URL(requestUrl).protocol === "https:" ? "; Secure" : "";
+  return `${COOKIE_NAME}=; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=0`;
 }
 
 async function login(request: Request, env: Env): Promise<Response> {
@@ -81,7 +83,7 @@ async function login(request: Request, env: Env): Promise<Response> {
     {
       headers: {
         "cache-control": "no-store",
-        "set-cookie": sessionCookie(await sessionToken(env.APP_PASSWORD)),
+        "set-cookie": sessionCookie(await sessionToken(env.APP_PASSWORD), request.url),
       },
     },
   );
@@ -102,7 +104,7 @@ const worker = {
         status: 302,
         headers: {
           location: "/login",
-          "set-cookie": expiredSessionCookie(),
+          "set-cookie": expiredSessionCookie(request.url),
         },
       });
     }
