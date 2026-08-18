@@ -8,7 +8,7 @@ export function RoutineIcon({ id, className = "" }: { id: WorkoutIconId; classNa
     B: <><path d="M4 18 9 7l5 10 6-12" /><path d="M3 18h18" /></>,
     C: <><path d="M4 19 12 5l8 14" /><path d="M8 14h8" /></>,
     EXPRESS: <><path d="m13 3-7 11h6l-1 7 7-11h-6l1-7Z" /></>,
-    RUN: <><path d="M5 18c-1.8-1.8-2-5.7-.4-8.2C6.1 7.4 8.4 6 11 6h7" /><path d="M8 18c-1.3-1.2-1.4-3.8-.3-5.4.9-1.4 2.3-2.1 4.1-2.1H19" /><path d="m16 3 3 3-3 3" /></>,
+    RUN: <><circle cx="15.5" cy="4.5" r="1.7" fill="currentColor" stroke="none" /><path d="m13.5 7.5-3 4.7M13 8l4 2 3-1M12 9l-3.5 1.5M10.5 12.2l4.5 3 1.8 4.4M10.5 12.2 8 16l-4.5 2.2" /></>,
   };
 
   return (

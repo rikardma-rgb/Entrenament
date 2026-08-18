@@ -393,13 +393,13 @@ const exercisesExpress: Exercise[] = [
 ];
 
 const routines = {
-  A: { label: "Full Body A", day: "Dimarts", accent: "lime", exercises: exercisesA, description: "Base global: sentadilla, empenta de pit, rem i estabilitat del tronc." },
-  B: { label: "Full Body B", day: "Dijous", accent: "orange", exercises: exercisesB, description: "Cadena posterior: frontissa de maluc, empenta vertical, jaló i treball unilateral." },
-  C: { label: "Full Body C", day: "Opcional", accent: "cream", exercises: exercisesC, description: "Complement per córrer: glutis, isquios, adductors, espatlla, tibial i càrregues." },
-  EXPRESS: { label: "Express", day: "Opcional", accent: "express", exercises: exercisesExpress, description: "Circuit curt de cos complet per als dies amb poc temps." },
+  A: { label: "Base Total", day: "Dimarts", accent: "lime", exercises: exercisesA, description: "15 min suaus + força global: sentadilla, empenta de pit, rem i estabilitat." },
+  B: { label: "Motor Posterior", day: "Dijous", accent: "orange", exercises: exercisesB, description: "15 min suaus + cadena posterior, empenta vertical, jaló i treball unilateral." },
+  C: { label: "Runner Resilience", day: "Opcional", accent: "cream", exercises: exercisesC, description: "Complement per córrer: glutis, isquios, adductors, espatlla, tibial i càrregues." },
+  EXPRESS: { label: "Express 30", day: "Opcional", accent: "express", exercises: exercisesExpress, description: "Circuit curt de cos complet per als dies amb poc temps." },
 };
 
-const allExercises = [...exercisesA, ...exercisesB, ...exercisesC];
+const allExercises = [...exercisesA, ...exercisesB, ...exercisesC, ...exercisesExpress];
 
 const alternatives: Record<string, { name: string; note: string }[]> = {
   "goblet-squat": [
@@ -796,6 +796,8 @@ export default function Home() {
     return { tracked: tracked.length, improved, atBest };
   }, [progressRows]);
 
+  const runningSessions = useMemo(() => sessions.filter((session) => session.routine === "RUN"), [sessions]);
+
   const currentWeek = useMemo(() => {
     const today = new Date();
     const monday = new Date(today);
@@ -840,36 +842,31 @@ export default function Home() {
 
       {tab === "week" && (
         <div className="page-grid">
-          <section className="plan-panel" aria-labelledby="weekly-plan-title">
-            <div className="section-heading">
-              <div><span>01</span><h2 id="weekly-plan-title">Planificació setmanal</h2></div>
-              <p>Tres sessions Full Body complementàries, running lliure i un circuit Express per als dies amb poc temps.</p>
-            </div>
-
+          <section className="plan-panel direct-content" aria-label="Planificació setmanal">
             <div className="schedule">
               <button className={routine === "A" ? "schedule-card selected lime" : "schedule-card"} onClick={() => switchRoutine("A")}>
                 <span className="day-index"><RoutineIcon id="A" /></span>
-                <div><small>FULL BODY A · BASE GLOBAL</small><strong>15’ suau + Full Body A</strong><p>{routines.A.description}</p></div>
+                <div><small>Full Body A · Dimarts</small><strong>{routines.A.label}</strong><p>{routines.A.description}</p></div>
                 <span className="arrow"><ArrowIcon direction="up-right" /></span>
               </button>
               <button className={routine === "B" ? "schedule-card selected orange" : "schedule-card"} onClick={() => switchRoutine("B")}>
                 <span className="day-index"><RoutineIcon id="B" /></span>
-                <div><small>FULL BODY B · CADENA POSTERIOR</small><strong>15’ suau + Full Body B</strong><p>{routines.B.description}</p></div>
+                <div><small>Full Body B · Dijous</small><strong>{routines.B.label}</strong><p>{routines.B.description}</p></div>
+                <span className="arrow"><ArrowIcon direction="up-right" /></span>
+              </button>
+              <button className={routine === "C" ? "schedule-card selected lime" : "schedule-card"} onClick={() => switchRoutine("C")}>
+                <span className="day-index"><RoutineIcon id="C" /></span>
+                <div><small>Full Body C · Opcional</small><strong>{routines.C.label}</strong><p>{routines.C.description}</p></div>
+                <span className="arrow"><ArrowIcon direction="up-right" /></span>
+              </button>
+              <button className={routine === "EXPRESS" ? "schedule-card selected express" : "schedule-card"} onClick={() => switchRoutine("EXPRESS")}>
+                <span className="day-index"><RoutineIcon id="EXPRESS" /></span>
+                <div><small>Full Body Express · Opcional</small><strong>{routines.EXPRESS.label}</strong><p>{routines.EXPRESS.description}</p></div>
                 <span className="arrow"><ArrowIcon direction="up-right" /></span>
               </button>
               <button className={routine === "RUN" ? "schedule-card selected cream" : "schedule-card"} onClick={() => switchRoutine("RUN")}>
                 <span className="day-index"><RoutineIcon id="RUN" /></span>
                 <div><small>DISSABTE O DIUMENGE</small><strong>Running lliure</strong><p>50–80 min · registre amb Suunto</p></div>
-                <span className="arrow"><ArrowIcon direction="up-right" /></span>
-              </button>
-              <button className={routine === "C" ? "schedule-card selected lime" : "schedule-card"} onClick={() => switchRoutine("C")}>
-                <span className="day-index"><RoutineIcon id="C" /></span>
-                <div><small>FULL BODY C · RUNNER RESILIENCE</small><strong>Full Body C</strong><p>{routines.C.description}</p></div>
-                <span className="arrow"><ArrowIcon direction="up-right" /></span>
-              </button>
-              <button className={routine === "EXPRESS" ? "schedule-card selected express" : "schedule-card"} onClick={() => switchRoutine("EXPRESS")}>
-                <span className="day-index"><RoutineIcon id="EXPRESS" /></span>
-                <div><small>OPCIONAL · QUAN TENS POC TEMPS</small><strong>Full Body Express</strong><p>{routines.EXPRESS.description}</p></div>
                 <span className="arrow"><ArrowIcon direction="up-right" /></span>
               </button>
             </div>
@@ -993,12 +990,7 @@ export default function Home() {
       )}
 
       {tab === "summary" && (
-        <section className="content-section weekly-dashboard">
-          <div className="section-heading wide">
-            <div><span>02</span><h2>La teva setmana</h2></div>
-            <p>Una vista clara del que has fet i una valoració que evoluciona amb el teu historial, els FIT i els comentaris.</p>
-          </div>
-
+        <section className="content-section weekly-dashboard direct-content" aria-label="Calendari setmanal">
           <div className="weekly-kpis">
             <div className="highlight"><small>OBJECTIU SETMANAL</small><strong>{Math.min(weeklyProgress.base, 3)}/3</strong><span>{Math.min(Math.round((weeklyProgress.base / 3) * 100), 100)}% completat{weeklyProgress.base > 3 ? ` · +${weeklyProgress.base - 3} ${weeklyProgress.base - 3 === 1 ? "sessió extra" : "sessions extra"}` : ""} · {displayDate(currentWeek.days[0].key)} — {displayDate(currentWeek.days[6].key)}</span></div>
             <div><small>ENTRENAMENTS</small><strong>{currentWeek.sessions.length}</strong><span>aquesta setmana</span></div>
@@ -1026,11 +1018,7 @@ export default function Home() {
       )}
 
       {tab === "progress" && (
-        <section className="content-section">
-          <div className="section-heading wide">
-            <div><span>02</span><h2>El teu progrés</h2></div>
-            <p>Una lectura ràpida: últim pes, canvi respecte a la sessió anterior i millor marca de cada exercici.</p>
-          </div>
+        <section className="content-section direct-content" aria-label="Progrés dels entrenaments">
           {loading ? <p className="empty-state">Carregant el teu historial...</p> : sessions.length === 0 ? (
             <div className="empty-state"><strong>Encara no hi ha sessions.</strong><p>Desa el primer entrenament i aquí veuràs com evoluciona cada exercici.</p></div>
           ) : (
@@ -1041,23 +1029,12 @@ export default function Home() {
                 <div className="positive"><span>Han pujat</span><strong>{progressSummary.improved}</strong><small>des de l’última sessió</small></div>
                 <div><span>En millor marca</span><strong>{progressSummary.atBest}</strong><small>ara mateix</small></div>
               </div>
-              <div className="progress-layout">
-                <div className="progress-groups">
-                  <ProgressGroup title="Full Body A" day="Dimarts" accent="lime" rows={progressRows.filter((row) => exercisesA.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
-                  <ProgressGroup title="Full Body B" day="Dijous" accent="orange" rows={progressRows.filter((row) => exercisesB.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
-                  <ProgressGroup title="Full Body C" day="Opcional" accent="lime" rows={progressRows.filter((row) => exercisesC.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
-                </div>
-                <aside className="history-card">
-                  <p className="eyebrow">ÚLTIMES SESSIONS</p>
-                  <h3>Historial</h3>
-                  {sessions.slice(0, 8).map((session) => (
-                    <div className="history-item" key={session.id}>
-                      <span className={`history-dot ${session.routine.toLowerCase()}`} />
-                      <div><strong>{routineLabel(session.routine)}</strong><small>{displayDate(session.sessionDate)} · {session.durationMinutes ?? "—"} min</small></div>
-                      <b>RPE {session.rpe ?? "—"}</b>
-                    </div>
-                  ))}
-                </aside>
+              <div className="progress-groups">
+                <ProgressGroup id="A" title={routines.A.label} day="Full Body A · Dimarts" accent="lime" rows={progressRows.filter((row) => exercisesA.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
+                <ProgressGroup id="B" title={routines.B.label} day="Full Body B · Dijous" accent="orange" rows={progressRows.filter((row) => exercisesB.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
+                <ProgressGroup id="C" title={routines.C.label} day="Full Body C · Opcional" accent="cream" rows={progressRows.filter((row) => exercisesC.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
+                <ProgressGroup id="EXPRESS" title={routines.EXPRESS.label} day="Circuit opcional" accent="express" rows={progressRows.filter((row) => exercisesExpress.some((exercise) => exercise.id === row.exercise.id))} onOpen={setSelectedExercise} />
+                <RunningProgressGroup sessions={runningSessions} />
               </div>
             </>
           )}
@@ -1145,10 +1122,15 @@ function ExerciseGuideCard({ exercise, index, onOpen }: { exercise: Exercise; in
 
 type ProgressRow = { exercise: Exercise; latest: number | null; previous: number | null; best: number | null; values: { weight: number; date: string }[] };
 
-function ProgressGroup({ title, day, accent, rows, onOpen }: { title: string; day: string; accent: "lime" | "orange"; rows: ProgressRow[]; onOpen: (exercise: Exercise) => void }) {
+function ProgressGroup({ id, title, day, accent, rows, onOpen }: { id: "A" | "B" | "C" | "EXPRESS"; title: string; day: string; accent: "lime" | "orange" | "cream" | "express"; rows: ProgressRow[]; onOpen: (exercise: Exercise) => void }) {
+  const recorded = rows.filter((row) => row.latest !== null).length;
   return (
-    <section className="progress-group">
-      <div className="progress-group-title"><span className={`dot ${accent}`} /><div><strong>{title}</strong><small>{day}</small></div></div>
+    <details className={`progress-group ${accent}`}>
+      <summary className="progress-group-title">
+        <span className={`progress-routine-icon ${accent}`}><RoutineIcon id={id} /></span>
+        <div><strong>{title}</strong><small>{day} · {recorded}/{rows.length} exercicis amb pes</small></div>
+        <ArrowIcon />
+      </summary>
       <div className="progress-cards">
         {rows.map(({ exercise, latest, previous, best, values }) => {
           const delta = latest !== null && previous !== null ? latest - previous : null;
@@ -1169,6 +1151,55 @@ function ProgressGroup({ title, day, accent, rows, onOpen }: { title: string; da
           );
         })}
       </div>
-    </section>
+    </details>
+  );
+}
+
+function RunningProgressGroup({ sessions }: { sessions: WorkoutSession[] }) {
+  const totalDistance = sessions.reduce((total, session) => total + Number(session.fitData.distanceKm ?? 0), 0);
+  const totalMinutes = sessions.reduce((total, session) => total + Number(session.fitData.durationMinutes ?? session.durationMinutes ?? 0), 0);
+  const totalElevation = sessions.reduce((total, session) => total + Number(session.fitData.elevation ?? 0), 0);
+  const latestPace = sessions.find((session) => session.fitData.pace)?.fitData.pace ?? null;
+
+  return (
+    <details className="progress-group run">
+      <summary className="progress-group-title">
+        <span className="progress-routine-icon run"><RoutineIcon id="RUN" /></span>
+        <div><strong>Running lliure</strong><small>{sessions.length ? `${sessions.length} activitats · ${totalDistance.toFixed(1)} km acumulats` : "Encara sense activitats"}</small></div>
+        <ArrowIcon />
+      </summary>
+      <div className="run-progress-body">
+        {sessions.length === 0 ? (
+          <p className="run-progress-empty">Importa un FIT de Suunto i desa la sessió per veure aquí el resum.</p>
+        ) : (
+          <>
+            <div className="run-progress-kpis">
+              <div><small>ACTIVITATS</small><strong>{sessions.length}</strong></div>
+              <div><small>DISTÀNCIA</small><strong>{totalDistance.toFixed(1)}<span> km</span></strong></div>
+              <div><small>TEMPS TOTAL</small><strong>{displayDuration(totalMinutes)}</strong></div>
+              <div><small>ÚLTIM RITME</small><strong>{latestPace ? displayPace(Number(latestPace)) : "—"}</strong></div>
+              <div><small>DESNIVELL +</small><strong>{Math.round(totalElevation)}<span> m</span></strong></div>
+            </div>
+            <div className="run-upload-list">
+              {sessions.slice(0, 6).map((session) => {
+                const fit = session.fitData;
+                const sessionMinutes = Number(fit.durationMinutes ?? session.durationMinutes ?? 0);
+                return (
+                  <article className="run-upload-card" key={session.id}>
+                    <div><small>{displayDate(session.sessionDate)}</small><strong>{fit.name || "Running lliure"}</strong></div>
+                    <dl>
+                      <div><dt>Distància</dt><dd>{fit.distanceKm ? `${Number(fit.distanceKm).toFixed(1)} km` : "—"}</dd></div>
+                      <div><dt>Temps</dt><dd>{sessionMinutes ? displayDuration(sessionMinutes) : "—"}</dd></div>
+                      <div><dt>Ritme</dt><dd>{fit.pace ? displayPace(Number(fit.pace)) : "—"}</dd></div>
+                      <div><dt>FC</dt><dd>{fit.heartRate ? `${Math.round(Number(fit.heartRate))} bpm` : "—"}</dd></div>
+                    </dl>
+                  </article>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </details>
   );
 }
