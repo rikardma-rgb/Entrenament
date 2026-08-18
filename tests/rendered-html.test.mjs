@@ -60,6 +60,7 @@ test("protects and server-renders the workout tracker", async () => {
   assert.match(html, /Full Body C/);
   assert.match(html, /Full Body Express/);
   assert.match(html, /Running lliure/);
+  assert.match(html, /Adjunta el FIT de l’escalfament/);
   assert.match(html, /Progrés/);
   assert.doesNotMatch(html, /codex-preview|signin-with-chatgpt/i);
 });
@@ -74,6 +75,7 @@ test("uses independent Cloudflare configuration", async () => {
   ]);
 
   assert.doesNotMatch(page, /ChatGPT|signin-with-chatgpt/i);
+  assert.match(page, /KM SETMANALS/);
   assert.doesNotMatch(viteConfig, /hosting\.json|sites-vite-plugin/i);
   assert.match(packageJson, /"deploy": "vinext-cloudflare deploy"/);
   assert.match(wranglerConfig, /"binding": "DB"/);
