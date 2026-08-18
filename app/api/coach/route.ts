@@ -36,7 +36,7 @@ Respon en català natural amb exactament 4 paràgrafs, de 2 a 4 frases cadascun 
         generationConfig: {
           temperature: 0.45,
           maxOutputTokens: 4000,
-          thinkingConfig: { thinkingBudget: 0 },
+          thinkingConfig: { thinkingLevel: "low" },
         },
       }),
     });
