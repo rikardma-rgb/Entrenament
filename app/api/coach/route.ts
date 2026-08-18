@@ -35,8 +35,7 @@ Respon en català natural amb exactament 4 paràgrafs, de 2 a 4 frases cadascun 
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.45,
-          maxOutputTokens: 2000,
-          thinkingConfig: { thinkingLevel: "low" },
+          maxOutputTokens: 4000,
         },
       }),
     });
