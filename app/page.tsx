@@ -782,6 +782,12 @@ export default function Home() {
     }
   }
 
+  async function retryLatestCoachFeedback() {
+    const latest = sessions[0];
+    if (!latest) return;
+    await generateCoachFeedback(latest.id);
+  }
+
   function updateResult(exerciseId: string, patch: Partial<ExerciseResult>) {
     setResults((current) => current.map((entry) => (entry.exerciseId === exerciseId ? { ...entry, ...patch } : entry)));
   }
@@ -1125,8 +1131,8 @@ export default function Home() {
                   </div>
                 </details>
               </div>
-            ) : coachText ? <div className="coach-response">{coachText.split("\n").filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div> : <div className="coach-empty"><p>Gemini generarà automàticament una valoració quan desis la pròxima sessió.</p>{coachConfigured === false && <small>Cal afegir la clau de Google AI Studio per activar-lo.</small>}</div>}
-            {coachError && <p className="coach-error">{coachError} L’entrenament s’ha desat correctament.</p>}
+            ) : coachText ? <div className="coach-response">{coachText.split("\n").filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div> : <div className="coach-empty"><p>{sessions.length ? "La sessió està desada, però encara falta generar-ne la valoració." : "Gemini generarà automàticament una valoració quan desis la pròxima sessió."}</p>{coachConfigured === false ? <small>Cal afegir la clau de Google AI Studio per activar-lo.</small> : sessions.length > 0 && <button className="coach-retry" type="button" onClick={retryLatestCoachFeedback} disabled={coachLoading}>{coachLoading ? "Generant…" : "Generar la valoració"}</button>}</div>}
+            {coachError && <div className="coach-error"><span>{coachError} L’entrenament s’ha desat correctament.</span><button type="button" onClick={retryLatestCoachFeedback} disabled={coachLoading}>Tornar a provar</button></div>}
           </div>
 
           <button className="secondary-technique" type="button" onClick={() => setTab("guide")}>Consultar la guia de tècnica <ArrowIcon /></button>

@@ -244,7 +244,10 @@ button { color: inherit; }
 .coach-response, .coach-empty { max-width: 850px; margin-top: 25px; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.65; }
 .coach-response p { margin: 0 0 12px; }
 .coach-empty small { color: var(--orange); }
-.coach-error { margin: 14px 0 0; color: var(--orange); font-size: 10px; line-height: 1.5; }
+.coach-retry, .coach-error button { min-height: 38px; margin-top: 10px; padding: 0 13px; border: 1px solid var(--lime); background: transparent; color: var(--lime); font-size: 9px; font-weight: 900; cursor: pointer; }
+.coach-retry:disabled, .coach-error button:disabled { opacity: .5; cursor: wait; }
+.coach-error { margin: 14px 0 0; color: var(--orange); font-size: 10px; line-height: 1.5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.coach-error button { margin-top: 0; border-color: var(--orange); color: var(--orange); }
 .secondary-technique { margin-top: 18px; padding: 9px 0; border: 0; background: transparent; color: #66675f; font-size: 10px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
 .progress-summary { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); margin-bottom: 45px; }
 .progress-summary > div { min-height: 128px; padding: 22px; border-right: 1px solid var(--line); display: grid; align-content: space-between; }

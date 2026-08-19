@@ -60,50 +60,62 @@ ${JSON.stringify(context)}
 
 Genera dos nivells de feedback: una lectura específica de la sessió nova i una lectura acumulada de la setmana. Cita xifres reals quan aportin valor. Compara amb la sessió anterior de la mateixa rutina i amb la setmana anterior només quan les dades ho permetin. Si hi ha continuïtat d'una recomanació anterior, comprova si s'ha pogut seguir; no assumeixis que s'ha complert.
 
-El veredicte ha d'explicar què significa la sessió, no limitar-se a descriure-la. L'evidència ha de justificar-lo amb una o dues dades. Cada nextAction ha de ser una única acció concreta i mesurable per al pròxim entrenament o per a la resta de la setmana. El camp watch només ha d'assenyalar un risc sustentat per dades; si no n'hi ha, indica què convé observar sense inventar alarmes. Ajusta confidence a la cobertura i comparabilitat de les dades.`;
+El veredicte ha d'explicar què significa la sessió, no limitar-se a descriure-la. L'evidència ha de justificar-lo amb una o dues dades. Cada nextAction ha de ser una única acció concreta i mesurable per al pròxim entrenament o per a la resta de la setmana. El camp watch només ha d'assenyalar un risc sustentat per dades; si no n'hi ha, indica què convé observar sense inventar alarmes. Ajusta confidence a la cobertura i comparabilitat de les dades.
+
+Retorna exclusivament un objecte JSON amb aquesta estructura: {"version":2,"session":{"verdict":"...","evidence":"...","nextAction":"..."},"week":{"summary":"...","progress":"...","watch":"...","nextAction":"..."},"confidence":"alta|mitjana|baixa"}.`;
     const systemInstruction = `Ets un entrenador personal especialista en força, running i trail running. Escriu sempre en català natural, proper, directe, exigent i prudent. No facis elogis automàtics ni frases genèriques com "continua així". No inventis dades, símptomes, tècnica, recuperació ni causes. Diferencia una observació d'una hipòtesi i reconeix quan falten dades. No diagnostiquis, no prescriguis tractaments ni substitueixis professionals sanitaris o de la nutrició. No mostris noms de camps interns ni JSON. Prioritza els comentaris de l'usuari i dona recomanacions conservadores si l'RPE és alt, hi ha molèsties o la informació és insuficient.`;
     const model = bindings.GEMINI_MODEL || "gemini-3.5-flash";
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": bindings.GEMINI_API_KEY },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 1800,
-          thinkingConfig: { thinkingLevel: "low" },
-          responseMimeType: "application/json",
-          responseSchema: {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const headers = { "content-type": "application/json", "x-goog-api-key": bindings.GEMINI_API_KEY };
+    const generationConfig = {
+      temperature: 0.3,
+      maxOutputTokens: 1800,
+      thinkingConfig: { thinkingLevel: "low" },
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          version: { type: "INTEGER" },
+          session: {
             type: "OBJECT",
             properties: {
-              version: { type: "INTEGER", enum: [2] },
-              session: {
-                type: "OBJECT",
-                properties: {
-                  verdict: { type: "STRING", description: "Interpretació honesta i específica de la sessió en 1 o 2 frases." },
-                  evidence: { type: "STRING", description: "Justificació amb dades reals en 1 o 2 frases." },
-                  nextAction: { type: "STRING", description: "Una acció concreta i mesurable per a la pròxima sessió." },
-                },
-                required: ["verdict", "evidence", "nextAction"],
-              },
-              week: {
-                type: "OBJECT",
-                properties: {
-                  summary: { type: "STRING", description: "Lectura breu de la càrrega i constància de la setmana." },
-                  progress: { type: "STRING", description: "Progrés detectat o límit de les dades disponibles." },
-                  watch: { type: "STRING", description: "Punt justificat que cal vigilar, sense alarmisme." },
-                  nextAction: { type: "STRING", description: "Una acció concreta i mesurable per a la resta de la setmana." },
-                },
-                required: ["summary", "progress", "watch", "nextAction"],
-              },
-              confidence: { type: "STRING", enum: ["alta", "mitjana", "baixa"] },
+              verdict: { type: "STRING", description: "Interpretació honesta i específica de la sessió en 1 o 2 frases." },
+              evidence: { type: "STRING", description: "Justificació amb dades reals en 1 o 2 frases." },
+              nextAction: { type: "STRING", description: "Una acció concreta i mesurable per a la pròxima sessió." },
             },
-            required: ["version", "session", "week", "confidence"],
+            required: ["verdict", "evidence", "nextAction"],
           },
+          week: {
+            type: "OBJECT",
+            properties: {
+              summary: { type: "STRING", description: "Lectura breu de la càrrega i constància de la setmana." },
+              progress: { type: "STRING", description: "Progrés detectat o límit de les dades disponibles." },
+              watch: { type: "STRING", description: "Punt justificat que cal vigilar, sense alarmisme." },
+              nextAction: { type: "STRING", description: "Una acció concreta i mesurable per a la resta de la setmana." },
+            },
+            required: ["summary", "progress", "watch", "nextAction"],
+          },
+          confidence: { type: "STRING", enum: ["alta", "mitjana", "baixa"] },
         },
-      }),
-    });
+        required: ["version", "session", "week", "confidence"],
+      },
+    };
+    const requestBody = (config: Record<string, unknown>) => JSON.stringify({
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: config,
+      });
+    let response = await fetch(endpoint, { method: "POST", headers, body: requestBody(generationConfig) });
+    if (response.status === 400) {
+      console.error("Gemini structured output rejected:", (await response.text()).slice(0, 1000));
+      const fallbackConfig = {
+        temperature: generationConfig.temperature,
+        maxOutputTokens: generationConfig.maxOutputTokens,
+        thinkingConfig: generationConfig.thinkingConfig,
+        responseMimeType: generationConfig.responseMimeType,
+      };
+      response = await fetch(endpoint, { method: "POST", headers, body: requestBody(fallbackConfig) });
+    }
 
     if (!response.ok) {
       const messages: Record<number, string> = {
