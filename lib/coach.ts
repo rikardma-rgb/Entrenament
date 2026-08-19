@@ -98,6 +98,12 @@ function round(value: number, digits = 1) {
   return Math.round(value * factor) / factor;
 }
 
+function formatPace(secondsPerKm: number | null | undefined) {
+  const totalSeconds = Math.round(Number(secondsPerKm ?? 0));
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return null;
+  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")} min/km`;
+}
+
 function weekStart(dateValue: string) {
   const date = new Date(`${dateValue}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
@@ -220,7 +226,7 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
         duradaMin: activity.runningMinutes || current.durationMinutes,
         rpe: current.rpe,
         km: activity.runningDistanceKm || null,
-        ritmeSegonsKm: activity.mainRun?.pace ?? null,
+        ritmeMinKm: formatPace(activity.mainRun?.pace),
         desnivellPositiuM: activity.mainRun?.elevation ?? null,
         polsMitja: activity.mainRun?.heartRate ?? null,
         kcal: activity.runningCalories || null,
@@ -228,7 +234,7 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
       escalfamentRunning: activity.warmupRun ? {
         duradaMin: activity.warmupRun.durationMinutes ?? null,
         km: activity.warmupRun.distanceKm ?? null,
-        ritmeSegonsKm: activity.warmupRun.pace ?? null,
+        ritmeMinKm: formatPace(activity.warmupRun.pace),
         desnivellPositiuM: activity.warmupRun.elevation ?? null,
         polsMitja: activity.warmupRun.heartRate ?? null,
         kcal: activity.warmupRun.calories ?? null,

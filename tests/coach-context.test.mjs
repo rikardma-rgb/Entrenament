@@ -49,6 +49,7 @@ test("keeps strength, running and warm-up data separate for Gemini", async () =>
   assert.equal(context.sessioNova.força.duradaMin, 32);
   assert.equal(context.sessioNova.força.rpe, 7);
   assert.equal(context.sessioNova.escalfamentRunning.km, 3);
+  assert.equal(context.sessioNova.escalfamentRunning.ritmeMinKm, "6:00 min/km");
   assert.equal(context.setmana.actual.força.rpeMitja, 7);
   assert.equal(context.setmana.actual.running.rpeMitjaSessionsLliures, 5);
   assert.equal(context.setmana.actual.força.kcal, 220);
