@@ -1113,7 +1113,7 @@ export default function Home() {
           </div>
 
           <div className="coach-card">
-            <div className="coach-heading"><div><span className="coach-mark">G</span><div><small>ENTRENADOR PERSONAL · GEMINI</small><h3>Valoració del teu progrés</h3></div></div><span className={coachLoading ? "coach-status loading" : "coach-status"}>{coachLoading ? "Actualitzant…" : coachUpdatedAt ? `Actualitzada ${displayCoachUpdate(coachUpdatedAt)}` : "Automàtica en desar"}</span></div>
+            <div className="coach-heading"><div><span className="coach-mark">G</span><div><small>ENTRENADOR PERSONAL · GEMINI</small><h3>Valoració del teu progrés</h3></div></div><div className="coach-controls"><span className={coachLoading ? "coach-status loading" : "coach-status"}>{coachLoading ? "Actualitzant…" : coachUpdatedAt ? `Actualitzada ${displayCoachUpdate(coachUpdatedAt)}` : "Automàtica en desar"}</span><button className="coach-manual" type="button" onClick={retryLatestCoachFeedback} disabled={coachLoading || sessions.length === 0}>{coachLoading ? "Analitzant…" : "Actualitzar amb Gemini"}</button></div></div>
             {coachFeedback ? (
               <div className="coach-feedback">
                 <section className="coach-session-feedback">
@@ -1131,7 +1131,7 @@ export default function Home() {
                   </div>
                 </details>
               </div>
-            ) : coachText ? <div className="coach-response">{coachText.split("\n").filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div> : <div className="coach-empty"><p>{sessions.length ? "La sessió està desada, però encara falta generar-ne la valoració." : "Gemini generarà automàticament una valoració quan desis la pròxima sessió."}</p>{coachConfigured === false ? <small>Cal afegir la clau de Google AI Studio per activar-lo.</small> : sessions.length > 0 && <button className="coach-retry" type="button" onClick={retryLatestCoachFeedback} disabled={coachLoading}>{coachLoading ? "Generant…" : "Generar la valoració"}</button>}</div>}
+            ) : coachText ? <div className="coach-response">{coachText.split("\n").filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div> : <div className="coach-empty"><p>{sessions.length ? "La sessió està desada, però encara falta generar-ne la valoració." : "Gemini generarà automàticament una valoració quan desis la pròxima sessió."}</p>{coachConfigured === false && <small>Cal afegir la clau de Google AI Studio per activar-lo.</small>}</div>}
             {coachError && <div className="coach-error"><span>{coachError} L’entrenament s’ha desat correctament.</span><button type="button" onClick={retryLatestCoachFeedback} disabled={coachLoading}>Tornar a provar</button></div>}
           </div>
 
