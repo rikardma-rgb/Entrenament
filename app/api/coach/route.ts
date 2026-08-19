@@ -58,12 +58,22 @@ ${bindings.ATHLETE_PROFILE || "Encara no configurat. No inventis dades personals
 Dades calculades i verificades per l'app:
 ${JSON.stringify(context)}
 
-Genera dos nivells de feedback: una lectura específica de la sessió nova i una lectura acumulada de la setmana. Cita xifres reals quan aportin valor. Compara amb la sessió anterior de la mateixa rutina i amb la setmana anterior només quan les dades ho permetin. Si hi ha continuïtat d'una recomanació anterior, comprova si s'ha pogut seguir; no assumeixis que s'ha complert.
+Genera dos nivells de feedback: una lectura específica de la sessió nova i una lectura acumulada de la setmana. Les dades ja estan separades entre força, running lliure i escalfaments de running. No barregis mètriques ni conclusions entre disciplines.
+
+REGLES DE SEPARACIÓ:
+1. A session.focus copia exactament sessioNova.modalitatPrincipal.
+2. Si la modalitat principal és força, session.verdict, session.evidence i session.nextAction han de parlar només de la força. No hi incloguis l'escalfament de running.
+3. Si la modalitat principal és running, aquests tres camps han de parlar només del running. No hi incloguis exercicis de força d'altres sessions.
+4. week.strength analitza exclusivament sessions, RPE, minuts, exercicis, pesos i repeticions de força.
+5. week.running analitza exclusivament running lliure i escalfaments: km, minuts, ritme, desnivell, pols i RPE de les sessions lliures. No tractis l'RPE d'una sessió de força com si fos l'RPE de l'escalfament.
+6. week.summary, week.watch i week.nextAction poden integrar les dues disciplines només per valorar constància, càrrega total, recuperació o planificació. No atribueixis causalitat entre força i running sense evidència explícita.
+
+Cita xifres reals quan aportin valor. Compara amb la sessió anterior de la mateixa rutina i amb la setmana anterior només quan les dades ho permetin. Un valor zero en una setmana sense sessions no és una marca esportiva ni una davallada: és absència de dades. Si hi ha continuïtat d'una recomanació anterior, comprova si s'ha pogut seguir; no assumeixis que s'ha complert.
 
 El veredicte ha d'explicar què significa la sessió, no limitar-se a descriure-la. L'evidència ha de justificar-lo amb una o dues dades. Cada nextAction ha de ser una única acció concreta i mesurable per al pròxim entrenament o per a la resta de la setmana. El camp watch només ha d'assenyalar un risc sustentat per dades; si no n'hi ha, indica què convé observar sense inventar alarmes. Ajusta confidence a la cobertura i comparabilitat de les dades.
 
-Retorna exclusivament un objecte JSON amb aquesta estructura: {"version":2,"session":{"verdict":"...","evidence":"...","nextAction":"..."},"week":{"summary":"...","progress":"...","watch":"...","nextAction":"..."},"confidence":"alta|mitjana|baixa"}.`;
-    const systemInstruction = `Ets un entrenador personal especialista en força, running i trail running. Escriu sempre en català natural, proper, directe, exigent i prudent. No facis elogis automàtics ni frases genèriques com "continua així". No inventis dades, símptomes, tècnica, recuperació ni causes. Diferencia una observació d'una hipòtesi i reconeix quan falten dades. No diagnostiquis, no prescriguis tractaments ni substitueixis professionals sanitaris o de la nutrició. No mostris noms de camps interns ni JSON. Prioritza els comentaris de l'usuari i dona recomanacions conservadores si l'RPE és alt, hi ha molèsties o la informació és insuficient.`;
+Retorna exclusivament un objecte JSON amb aquesta estructura: {"version":3,"session":{"focus":"força|running","verdict":"...","evidence":"...","nextAction":"..."},"week":{"summary":"...","strength":"...","running":"...","watch":"...","nextAction":"..."},"confidence":"alta|mitjana|baixa"}.`;
+    const systemInstruction = `Ets un entrenador personal especialista en força, running i trail running. Escriu sempre en català natural, proper, directe, exigent i prudent. Tracta força i running com dues línies de progressió independents i integra-les només quan parlis de càrrega global, recuperació o planificació. No facis elogis automàtics ni frases genèriques com "continua així". No inventis dades, símptomes, tècnica, recuperació ni causes. Diferencia una observació d'una hipòtesi i reconeix quan falten dades. No diagnostiquis, no prescriguis tractaments ni substitueixis professionals sanitaris o de la nutrició. No mostris noms de camps interns ni JSON. Prioritza els comentaris de l'usuari i dona recomanacions conservadores si l'RPE és alt, hi ha molèsties o la informació és insuficient.`;
     const model = bindings.GEMINI_MODEL || "gemini-3.5-flash";
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     const headers = { "content-type": "application/json", "x-goog-api-key": bindings.GEMINI_API_KEY };
@@ -79,21 +89,23 @@ Retorna exclusivament un objecte JSON amb aquesta estructura: {"version":2,"sess
           session: {
             type: "OBJECT",
             properties: {
+              focus: { type: "STRING", enum: ["força", "running"] },
               verdict: { type: "STRING", description: "Interpretació honesta i específica de la sessió en 1 o 2 frases." },
               evidence: { type: "STRING", description: "Justificació amb dades reals en 1 o 2 frases." },
               nextAction: { type: "STRING", description: "Una acció concreta i mesurable per a la pròxima sessió." },
             },
-            required: ["verdict", "evidence", "nextAction"],
+            required: ["focus", "verdict", "evidence", "nextAction"],
           },
           week: {
             type: "OBJECT",
             properties: {
               summary: { type: "STRING", description: "Lectura breu de la càrrega i constància de la setmana." },
-              progress: { type: "STRING", description: "Progrés detectat o límit de les dades disponibles." },
+              strength: { type: "STRING", description: "Progrés de força exclusivament, o límit de les dades de força disponibles." },
+              running: { type: "STRING", description: "Progrés de running exclusivament, o límit de les dades de running disponibles." },
               watch: { type: "STRING", description: "Punt justificat que cal vigilar, sense alarmisme." },
               nextAction: { type: "STRING", description: "Una acció concreta i mesurable per a la resta de la setmana." },
             },
-            required: ["summary", "progress", "watch", "nextAction"],
+            required: ["summary", "strength", "running", "watch", "nextAction"],
           },
           confidence: { type: "STRING", enum: ["alta", "mitjana", "baixa"] },
         },

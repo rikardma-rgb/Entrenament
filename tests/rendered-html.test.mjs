@@ -95,8 +95,11 @@ test("uses independent Cloudflare configuration", async () => {
   assert.match(coachRoute, /insert\(coachFeedback\)/);
   assert.match(coachRoute, /responseMimeType: "application\/json"/);
   assert.match(coachRoute, /responseSchema/);
+  assert.match(coachRoute, /No barregis mètriques ni conclusions entre disciplines/);
   assert.match(coachLogic, /buildCoachContext/);
   assert.match(coachLogic, /ultimesQuatreSetmanes/);
+  assert.match(page, /PROGRÉS DE FORÇA/);
+  assert.match(page, /PROGRÉS DE RUNNING/);
   assert.match(page, /ÚLTIMA SESSIÓ/);
   assert.match(page, /VISIÓ SETMANAL/);
   assert.match(schema, /"coach_feedback"/);

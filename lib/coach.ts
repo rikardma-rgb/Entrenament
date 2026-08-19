@@ -1,13 +1,16 @@
 export type CoachFeedback = {
-  version: 2;
+  version: 3;
   session: {
+    focus: "força" | "running" | "global";
     verdict: string;
     evidence: string;
     nextAction: string;
   };
   week: {
     summary: string;
-    progress: string;
+    strength: string;
+    running: string;
+    progress?: string;
     watch: string;
     nextAction: string;
   };
@@ -34,6 +37,7 @@ type ExerciseResult = {
 
 type FitData = {
   distanceKm?: number;
+  durationMinutes?: number;
   calories?: number | null;
   pace?: number | null;
   elevation?: number;
@@ -108,26 +112,62 @@ function moveDate(dateValue: string, days: number) {
 
 function activityTotals(session: WorkoutRow) {
   const fit = parseJson<FitData>(session.fitData || "{}", {});
-  const distanceKm = (session.routine === "RUN" ? Number(fit.distanceKm ?? 0) : 0)
-    + Number(fit.warmupRun?.distanceKm ?? 0);
-  const calories = Number(fit.calories ?? 0)
-    + Number(fit.warmupRun?.calories ?? 0)
-    + Number(fit.strength?.calories ?? 0);
-  return { fit, distanceKm: round(distanceKm, 2), calories: Math.round(calories) };
+  const mainRun = session.routine === "RUN" ? fit : null;
+  const warmupRun = session.routine === "RUN" ? null : fit.warmupRun ?? null;
+  const strength = session.routine === "RUN" ? null : fit.strength ?? null;
+  const runningDistanceKm = Number(mainRun?.distanceKm ?? 0) + Number(warmupRun?.distanceKm ?? 0);
+  const runningMinutes = Number(mainRun?.durationMinutes ?? (session.routine === "RUN" ? session.durationMinutes : 0) ?? 0)
+    + Number(warmupRun?.durationMinutes ?? 0);
+  const warmupMinutes = Number(warmupRun?.durationMinutes ?? 0);
+  const strengthMinutes = session.routine === "RUN"
+    ? 0
+    : Number(strength?.durationMinutes ?? Math.max(0, Number(session.durationMinutes ?? 0) - warmupMinutes));
+  const runningCalories = Number(mainRun?.calories ?? 0) + Number(warmupRun?.calories ?? 0);
+  const strengthCalories = session.routine === "RUN"
+    ? 0
+    : Number(strength?.calories ?? (!warmupRun ? fit.calories : 0) ?? 0);
+  return {
+    fit,
+    mainRun,
+    warmupRun,
+    strength,
+    runningDistanceKm: round(runningDistanceKm, 2),
+    runningMinutes: round(runningMinutes, 1),
+    strengthMinutes: round(strengthMinutes, 1),
+    runningCalories: Math.round(runningCalories),
+    strengthCalories: Math.round(strengthCalories),
+    calories: Math.round(runningCalories + strengthCalories),
+  };
 }
 
 function summarizeWeek(sessions: WorkoutRow[], start: string) {
   const weekSessions = sessions.filter((session) => weekStart(session.sessionDate) === start);
-  const rpes = weekSessions.flatMap((session) => session.rpe === null ? [] : [session.rpe]);
+  const strengthSessions = weekSessions.filter((session) => session.routine !== "RUN");
+  const runSessions = weekSessions.filter((session) => session.routine === "RUN");
+  const strengthRpes = strengthSessions.flatMap((session) => session.rpe === null ? [] : [session.rpe]);
+  const runningRpes = runSessions.flatMap((session) => session.rpe === null ? [] : [session.rpe]);
+  const activities = weekSessions.map((session) => activityTotals(session));
+  const average = (values: number[]) => values.length ? round(values.reduce((total, value) => total + value, 0) / values.length, 1) : null;
   return {
     inici: start,
     sessions: weekSessions.length,
-    força: weekSessions.filter((session) => session.routine !== "RUN").length,
-    running: weekSessions.filter((session) => session.routine === "RUN").length,
+    força: {
+      sessions: strengthSessions.length,
+      minuts: round(activities.reduce((total, activity) => total + activity.strengthMinutes, 0), 1),
+      kcal: activities.reduce((total, activity) => total + activity.strengthCalories, 0),
+      rpeMitja: average(strengthRpes),
+    },
+    running: {
+      sessionsLliures: runSessions.length,
+      escalfaments: weekSessions.filter((session) => activityTotals(session).warmupRun).length,
+      km: round(activities.reduce((total, activity) => total + activity.runningDistanceKm, 0), 1),
+      minuts: round(activities.reduce((total, activity) => total + activity.runningMinutes, 0), 1),
+      kcal: activities.reduce((total, activity) => total + activity.runningCalories, 0),
+      rpeMitjaSessionsLliures: average(runningRpes),
+    },
     minuts: weekSessions.reduce((total, session) => total + Number(session.durationMinutes ?? 0), 0),
-    km: round(weekSessions.reduce((total, session) => total + activityTotals(session).distanceKm, 0), 1),
-    kcal: weekSessions.reduce((total, session) => total + activityTotals(session).calories, 0),
-    rpeMitja: rpes.length ? round(rpes.reduce((total, rpe) => total + rpe, 0) / rpes.length, 1) : null,
+    km: round(activities.reduce((total, activity) => total + activity.runningDistanceKm, 0), 1),
+    kcal: activities.reduce((total, activity) => total + activity.calories, 0),
   };
 }
 
@@ -153,10 +193,14 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
     sessioNova: {
       data: current.sessionDate,
       rutina: routineNames[current.routine] ?? current.routine,
-      duradaMin: current.durationMinutes,
-      rpe: current.rpe,
+      modalitatPrincipal: current.routine === "RUN" ? "running" : "força",
       comentarisUsuari: current.notes || null,
-      exercicis: currentExercises.map((exercise) => {
+      força: current.routine === "RUN" ? null : {
+        duradaMin: activity.strengthMinutes || null,
+        rpe: current.rpe,
+        kcalFit: activity.strengthCalories || null,
+        polsMitjaFit: activity.strength?.heartRate ?? null,
+        exercicis: currentExercises.map((exercise) => {
         const old = previousExercises.get(exercise.exerciseId);
         const delta = exercise.weight !== null && old?.weight !== null && old?.weight !== undefined
           ? round(exercise.weight - old.weight, 1)
@@ -170,16 +214,31 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
           repeticionsAnteriors: old?.reps || null,
           canviPesKg: delta,
         };
-      }),
-      running: {
-        km: activity.distanceKm || null,
-        ritmeSegonsKm: activity.fit.pace ?? activity.fit.warmupRun?.pace ?? null,
-        desnivellPositiuM: Number(activity.fit.elevation ?? 0) + Number(activity.fit.warmupRun?.elevation ?? 0) || null,
-        polsMitja: activity.fit.heartRate ?? activity.fit.warmupRun?.heartRate ?? activity.fit.strength?.heartRate ?? null,
-        kcal: activity.calories || null,
+        }),
       },
+      running: current.routine !== "RUN" ? null : {
+        duradaMin: activity.runningMinutes || current.durationMinutes,
+        rpe: current.rpe,
+        km: activity.runningDistanceKm || null,
+        ritmeSegonsKm: activity.mainRun?.pace ?? null,
+        desnivellPositiuM: activity.mainRun?.elevation ?? null,
+        polsMitja: activity.mainRun?.heartRate ?? null,
+        kcal: activity.runningCalories || null,
+      },
+      escalfamentRunning: activity.warmupRun ? {
+        duradaMin: activity.warmupRun.durationMinutes ?? null,
+        km: activity.warmupRun.distanceKm ?? null,
+        ritmeSegonsKm: activity.warmupRun.pace ?? null,
+        desnivellPositiuM: activity.warmupRun.elevation ?? null,
+        polsMitja: activity.warmupRun.heartRate ?? null,
+        kcal: activity.warmupRun.calories ?? null,
+      } : null,
       comparacioDisponible: Boolean(previous),
-      sessioAnteriorMateixaRutina: previous ? { data: previous.sessionDate, rpe: previous.rpe, duradaMin: previous.durationMinutes } : null,
+      sessioAnteriorMateixaRutina: previous ? {
+        data: previous.sessionDate,
+        rpe: previous.rpe,
+        duradaMin: previous.durationMinutes,
+      } : null,
     },
     setmana: {
       actual: currentWeek,
@@ -188,7 +247,10 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
         sessions: currentWeek.sessions - previousWeek.sessions,
         minuts: currentWeek.minuts - previousWeek.minuts,
         km: round(currentWeek.km - previousWeek.km, 1),
-        rpeMitja: currentWeek.rpeMitja !== null && previousWeek.rpeMitja !== null ? round(currentWeek.rpeMitja - previousWeek.rpeMitja, 1) : null,
+        sessionsForça: currentWeek.força.sessions - previousWeek.força.sessions,
+        minutsForça: round(currentWeek.força.minuts - previousWeek.força.minuts, 1),
+        sessionsRunningLliure: currentWeek.running.sessionsLliures - previousWeek.running.sessionsLliures,
+        kmRunning: round(currentWeek.running.km - previousWeek.running.km, 1),
       },
       ultimesQuatreSetmanes: recentWeeks,
     },
@@ -198,7 +260,14 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
     } : null,
     qualitatDades: {
       sessionsDisponibles: sessions.length,
-      sessionsAmbRpe: sessions.filter((session) => session.rpe !== null).length,
+      força: {
+        sessions: sessions.filter((session) => session.routine !== "RUN").length,
+        sessionsAmbRpe: sessions.filter((session) => session.routine !== "RUN" && session.rpe !== null).length,
+      },
+      running: {
+        sessionsLliures: sessions.filter((session) => session.routine === "RUN").length,
+        activitatsAmbFit: sessions.filter((session) => activityTotals(session).runningDistanceKm > 0).length,
+      },
       sessionsAmbFit: sessions.filter((session) => session.fitData && session.fitData !== "{}").length,
       comparacioMateixaRutina: Boolean(previous),
     },
@@ -218,19 +287,26 @@ export function parseCoachFeedback(value: string): CoachFeedback | null {
   const confidence = raw.confidence;
   if (!session || !week || (confidence !== "alta" && confidence !== "mitjana" && confidence !== "baixa")) return null;
   const feedback: CoachFeedback = {
-    version: 2,
+    version: 3,
     session: {
+      focus: session.focus === "força" || session.focus === "running" ? session.focus : "global",
       verdict: textField(session.verdict, 420),
       evidence: textField(session.evidence, 420),
       nextAction: textField(session.nextAction, 320),
     },
     week: {
       summary: textField(week.summary, 420),
-      progress: textField(week.progress, 420),
+      strength: textField(week.strength, 420),
+      running: textField(week.running, 420),
+      progress: textField(week.progress, 420) || undefined,
       watch: textField(week.watch, 420),
       nextAction: textField(week.nextAction, 360),
     },
     confidence,
   };
-  return Object.values(feedback.session).every(Boolean) && Object.values(feedback.week).every(Boolean) ? feedback : null;
+  const hasProgress = Boolean(feedback.week.strength && feedback.week.running) || Boolean(feedback.week.progress);
+  return Object.values(feedback.session).every(Boolean)
+    && Boolean(feedback.week.summary && feedback.week.watch && feedback.week.nextAction && hasProgress)
+    ? feedback
+    : null;
 }

@@ -1117,7 +1117,7 @@ export default function Home() {
             {coachFeedback ? (
               <div className="coach-feedback">
                 <section className="coach-session-feedback">
-                  <div className="coach-block-label"><span>ÚLTIMA SESSIÓ</span><small>Confiança {coachFeedback.confidence}</small></div>
+                  <div className="coach-block-label"><span>ÚLTIMA SESSIÓ{coachFeedback.session.focus !== "global" ? ` · ${coachFeedback.session.focus.toUpperCase()}` : ""}</span><small>Confiança {coachFeedback.confidence}</small></div>
                   <p className="coach-verdict">{coachFeedback.session.verdict}</p>
                   <div className="coach-reason"><small>PER QUÈ</small><p>{coachFeedback.session.evidence}</p></div>
                   <div className="coach-next"><small>PRÒXIMA ACCIÓ</small><strong>{coachFeedback.session.nextAction}</strong></div>
@@ -1125,7 +1125,9 @@ export default function Home() {
                 <details className="coach-week-feedback">
                   <summary><span><small>VISIÓ SETMANAL</small><strong>{coachFeedback.week.summary}</strong></span><ArrowIcon /></summary>
                   <div className="coach-week-body">
-                    <div><small>PROGRÉS</small><p>{coachFeedback.week.progress}</p></div>
+                    {coachFeedback.week.strength && <div><small>PROGRÉS DE FORÇA</small><p>{coachFeedback.week.strength}</p></div>}
+                    {coachFeedback.week.running && <div><small>PROGRÉS DE RUNNING</small><p>{coachFeedback.week.running}</p></div>}
+                    {coachFeedback.week.progress && <div><small>PROGRÉS</small><p>{coachFeedback.week.progress}</p></div>}
                     <div><small>A VIGILAR</small><p>{coachFeedback.week.watch}</p></div>
                     <div className="coach-week-next"><small>ACCIÓ SETMANAL</small><p>{coachFeedback.week.nextAction}</p></div>
                   </div>
