@@ -43,6 +43,15 @@ type WorkoutSession = {
   createdAt: string;
 };
 
+type HeartRateZones = {
+  belowZone1Minutes?: number;
+  zone1Minutes: number;
+  zone2Minutes: number;
+  zone3Minutes: number;
+  zone4Minutes: number;
+  zone5Minutes: number;
+};
+
 type ImportedRun = {
   name: string;
   date: string;
@@ -56,6 +65,7 @@ type ImportedRun = {
   maxHeartRate: number | null;
   cadence: number | null;
   calories: number | null;
+  heartRateZones: HeartRateZones | null;
 };
 
 type SessionFitData = Partial<ImportedRun> & {
@@ -535,6 +545,22 @@ function displayPace(secondsPerKm: number) {
   return `${Math.floor(secondsPerKm / 60)}:${String(secondsPerKm % 60).padStart(2, "0")} min/km`;
 }
 
+function importedHeartRateZones(value: unknown): HeartRateZones | null {
+  if (!Array.isArray(value) || value.length < 5) return null;
+  const seconds = value.map((entry) => Number.isFinite(Number(entry)) ? Number(entry) : 0);
+  if (seconds.every((entry) => entry <= 0)) return null;
+  const firstZoneIndex = seconds.length >= 6 ? 1 : 0;
+  const minutes = (index: number) => Math.round((seconds[firstZoneIndex + index] ?? 0) / 6) / 10;
+  return {
+    ...(firstZoneIndex === 1 ? { belowZone1Minutes: Math.round((seconds[0] ?? 0) / 6) / 10 } : {}),
+    zone1Minutes: minutes(0),
+    zone2Minutes: minutes(1),
+    zone3Minutes: minutes(2),
+    zone4Minutes: minutes(3),
+    zone5Minutes: minutes(4),
+  };
+}
+
 function displayCoachUpdate(value: string) {
   const date = new Date(value.includes("T") ? value : `${value.replace(" ", "T")}Z`);
   return new Intl.DateTimeFormat("ca-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(date);
@@ -705,6 +731,7 @@ export default function Home() {
         maxHeartRate: session.maxHeartRate ? Math.round(Number(session.maxHeartRate)) : null,
         cadence: session.avgRunningCadence || session.avgCadence ? Math.round(Number(session.avgRunningCadence ?? session.avgCadence)) : null,
         calories: session.totalCalories === undefined ? null : Math.round(Number(session.totalCalories)),
+        heartRateZones: importedHeartRateZones(session.timeInHrZone),
       };
       setDate(activity.date);
       if (target === "run") {

@@ -35,6 +35,15 @@ type ExerciseResult = {
   completed: boolean;
 };
 
+type HeartRateZones = {
+  belowZone1Minutes?: number;
+  zone1Minutes?: number;
+  zone2Minutes?: number;
+  zone3Minutes?: number;
+  zone4Minutes?: number;
+  zone5Minutes?: number;
+};
+
 type FitData = {
   distanceKm?: number;
   durationMinutes?: number;
@@ -42,6 +51,8 @@ type FitData = {
   pace?: number | null;
   elevation?: number;
   heartRate?: number | null;
+  maxHeartRate?: number | null;
+  heartRateZones?: HeartRateZones | null;
   warmupRun?: FitData | null;
   strength?: FitData | null;
 };
@@ -104,6 +115,20 @@ function formatPace(secondsPerKm: number | null | undefined) {
   return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")} min/km`;
 }
 
+function totalHeartRateZones(values: (HeartRateZones | null | undefined)[]) {
+  const available = values.filter((value): value is HeartRateZones => Boolean(value));
+  if (!available.length) return null;
+  const sum = (key: keyof HeartRateZones) => round(available.reduce((total, value) => total + Number(value[key] ?? 0), 0), 1);
+  return {
+    sotaZ1Min: sum("belowZone1Minutes"),
+    z1Min: sum("zone1Minutes"),
+    z2Min: sum("zone2Minutes"),
+    z3Min: sum("zone3Minutes"),
+    z4Min: sum("zone4Minutes"),
+    z5Min: sum("zone5Minutes"),
+  };
+}
+
 function weekStart(dateValue: string) {
   const date = new Date(`${dateValue}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
@@ -141,6 +166,7 @@ function activityTotals(session: WorkoutRow) {
     runningMinutes: round(runningMinutes, 1),
     strengthMinutes: round(strengthMinutes, 1),
     runningCalories: Math.round(runningCalories),
+    runningHeartRateZones: totalHeartRateZones([mainRun?.heartRateZones, warmupRun?.heartRateZones]),
     strengthCalories: Math.round(strengthCalories),
     calories: Math.round(runningCalories + strengthCalories),
   };
@@ -170,6 +196,14 @@ function summarizeWeek(sessions: WorkoutRow[], start: string) {
       minuts: round(activities.reduce((total, activity) => total + activity.runningMinutes, 0), 1),
       kcal: activities.reduce((total, activity) => total + activity.runningCalories, 0),
       rpeMitjaSessionsLliures: average(runningRpes),
+      zonesFC: totalHeartRateZones(activities.map((activity) => activity.runningHeartRateZones ? {
+        belowZone1Minutes: activity.runningHeartRateZones.sotaZ1Min,
+        zone1Minutes: activity.runningHeartRateZones.z1Min,
+        zone2Minutes: activity.runningHeartRateZones.z2Min,
+        zone3Minutes: activity.runningHeartRateZones.z3Min,
+        zone4Minutes: activity.runningHeartRateZones.z4Min,
+        zone5Minutes: activity.runningHeartRateZones.z5Min,
+      } : null)),
     },
     minuts: weekSessions.reduce((total, session) => total + Number(session.durationMinutes ?? 0), 0),
     km: round(activities.reduce((total, activity) => total + activity.runningDistanceKm, 0), 1),
@@ -229,6 +263,8 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
         ritmeMinKm: formatPace(activity.mainRun?.pace),
         desnivellPositiuM: activity.mainRun?.elevation ?? null,
         polsMitja: activity.mainRun?.heartRate ?? null,
+        polsMaxim: activity.mainRun?.maxHeartRate ?? null,
+        zonesFCMin: activity.runningHeartRateZones,
         kcal: activity.runningCalories || null,
       },
       escalfamentRunning: activity.warmupRun ? {
@@ -237,6 +273,8 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
         ritmeMinKm: formatPace(activity.warmupRun.pace),
         desnivellPositiuM: activity.warmupRun.elevation ?? null,
         polsMitja: activity.warmupRun.heartRate ?? null,
+        polsMaxim: activity.warmupRun.maxHeartRate ?? null,
+        zonesFCMin: totalHeartRateZones([activity.warmupRun.heartRateZones]),
         kcal: activity.warmupRun.calories ?? null,
       } : null,
       comparacioDisponible: Boolean(previous),
@@ -260,6 +298,23 @@ export function buildCoachContext(sessions: WorkoutRow[], sessionId: number, pre
       },
       ultimesQuatreSetmanes: recentWeeks,
     },
+    historialRunning: sessions.flatMap((session) => {
+      const totals = activityTotals(session);
+      const run = session.routine === "RUN" ? totals.mainRun : totals.warmupRun;
+      if (!run || (!run.distanceKm && !run.durationMinutes && !run.heartRate)) return [];
+      return [{
+        data: session.sessionDate,
+        tipus: session.routine === "RUN" ? "running lliure" : `escalfament de ${routineNames[session.routine] ?? session.routine}`,
+        km: run.distanceKm ?? null,
+        duradaMin: run.durationMinutes ?? null,
+        ritmeMinKm: formatPace(run.pace),
+        desnivellPositiuM: run.elevation ?? null,
+        polsMitja: run.heartRate ?? null,
+        polsMaxim: run.maxHeartRate ?? null,
+        zonesFCMin: totalHeartRateZones([run.heartRateZones]),
+        rpe: session.routine === "RUN" ? session.rpe : null,
+      }];
+    }).slice(0, 12),
     continuïtatCoach: previousFeedback ? {
       accioSessioAnterior: previousFeedback.session.nextAction,
       accioSetmanaAnterior: previousFeedback.week.nextAction,

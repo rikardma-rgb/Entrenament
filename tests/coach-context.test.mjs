@@ -37,7 +37,15 @@ const freeRun = {
   rpe: 5,
   exerciseData: "[]",
   notes: "",
-  fitData: JSON.stringify({ distanceKm: 10, durationMinutes: 60, pace: 360, heartRate: 145, calories: 600 }),
+  fitData: JSON.stringify({
+    distanceKm: 10,
+    durationMinutes: 60,
+    pace: 360,
+    heartRate: 145,
+    maxHeartRate: 168,
+    calories: 600,
+    heartRateZones: { belowZone1Minutes: 2, zone1Minutes: 8, zone2Minutes: 38, zone3Minutes: 10, zone4Minutes: 2, zone5Minutes: 0 },
+  }),
 };
 
 test("keeps strength, running and warm-up data separate for Gemini", async () => {
@@ -55,6 +63,10 @@ test("keeps strength, running and warm-up data separate for Gemini", async () =>
   assert.equal(context.setmana.actual.força.kcal, 220);
   assert.equal(context.setmana.actual.running.kcal, 780);
   assert.equal(context.setmana.actual.kcal, 1000);
+  assert.equal(context.setmana.actual.running.zonesFC.z2Min, 38);
+  assert.equal(context.historialRunning[1].polsMitja, 145);
+  assert.equal(context.historialRunning[1].polsMaxim, 168);
+  assert.equal(context.historialRunning[1].zonesFCMin.z3Min, 10);
 });
 
 test("accepts both the new split feedback and saved legacy feedback", async () => {
