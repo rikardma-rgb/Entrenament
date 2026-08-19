@@ -66,12 +66,15 @@ test("protects and server-renders the workout tracker", async () => {
 });
 
 test("uses independent Cloudflare configuration", async () => {
-  const [page, packageJson, viteConfig, wranglerConfig, worker] = await Promise.all([
+  const [page, packageJson, viteConfig, wranglerConfig, worker, coachRoute, coachLogic, schema] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
     readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/coach/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/coach.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(page, /ChatGPT|signin-with-chatgpt/i);
@@ -85,6 +88,18 @@ test("uses independent Cloudflare configuration", async () => {
   assert.match(worker, /APP_PASSWORD/);
   assert.match(worker, /HttpOnly\$\{secure\}; SameSite=Strict/);
   assert.match(worker, /protocol === "https:" \? "; Secure"/);
+  assert.match(page, /generateCoachFeedback\(sessionId\)/);
+  assert.match(page, /Automàtica en desar/);
+  assert.doesNotMatch(page, /onClick=\{askCoach\}/);
+  assert.match(coachRoute, /export async function GET\(\)/);
+  assert.match(coachRoute, /insert\(coachFeedback\)/);
+  assert.match(coachRoute, /responseMimeType: "application\/json"/);
+  assert.match(coachRoute, /responseSchema/);
+  assert.match(coachLogic, /buildCoachContext/);
+  assert.match(coachLogic, /ultimesQuatreSetmanes/);
+  assert.match(page, /ÚLTIMA SESSIÓ/);
+  assert.match(page, /VISIÓ SETMANAL/);
+  assert.match(schema, /"coach_feedback"/);
 
   await Promise.all([
     access(new URL("../public/exercises-a.png", import.meta.url)),

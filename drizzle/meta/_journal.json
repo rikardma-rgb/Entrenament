@@ -8,6 +8,13 @@
       "when": 1786460478687,
       "tag": "0000_cloudy_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1787153561007,
+      "tag": "0001_motionless_grim_reaper",
+      "breakpoints": true
     }
   ]
 }

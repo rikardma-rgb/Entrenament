@@ -25,6 +25,13 @@ export async function ensureWorkoutSchema() {
     )`),
     env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_workout_sessions_date ON workout_sessions(session_date)"),
     env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_workout_sessions_routine_date ON workout_sessions(routine, session_date)"),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS coach_feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL UNIQUE,
+      analysis TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`),
+    env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_coach_feedback_session ON coach_feedback(session_id)"),
     env.DB.prepare("UPDATE workout_sessions SET routine = 'EXPRESS' WHERE routine = 'C' AND exercise_data LIKE '%express-%'"),
     env.DB.prepare("PRAGMA optimize"),
   ]).then(async () => {

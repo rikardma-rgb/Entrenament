@@ -19,3 +19,14 @@ export const workoutSessions = sqliteTable(
     index("idx_workout_sessions_routine_date").on(table.routine, table.sessionDate),
   ],
 );
+
+export const coachFeedback = sqliteTable(
+  "coach_feedback",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    sessionId: integer("session_id").notNull().unique(),
+    analysis: text("analysis").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [index("idx_coach_feedback_session").on(table.sessionId)],
+);

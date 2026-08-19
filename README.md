@@ -28,8 +28,8 @@ data, la durada, la distància, el ritme, el desnivell i les pulsacions disponib
 
 ## Entrenador Gemini
 
-El Calendari setmanal pot generar una valoració amb Gemini a partir de l’historial,
-les càrregues, l’RPE, els FIT i els comentaris. Configura `GEMINI_API_KEY` i
+Quan deses una sessió, el Calendari setmanal genera automàticament una valoració amb Gemini a partir de l’historial,
+les càrregues, l’RPE, els FIT i els comentaris. L’app calcula les comparacions abans d’enviar-les i Gemini retorna un comentari específic de l’última sessió i una visió setmanal desplegable, amb accions mesurables. L’última valoració queda desada i torna a aparèixer quan obres l’app. Configura `GEMINI_API_KEY` i
 `ATHLETE_PROFILE` a `.dev.vars`. La clau només s’utilitza al servidor.
 
 ## Base de dades

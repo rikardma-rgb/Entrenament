@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "re
 import { Decoder, Stream } from "@garmin/fitsdk";
 import { BrandMark } from "./brand-mark";
 import { ArrowIcon, RoutineIcon } from "./workout-icons";
+import type { CoachFeedback } from "../lib/coach";
 
 type RoutineId = "A" | "B" | "C" | "EXPRESS" | "RUN";
 type TabId = "week" | "summary" | "progress" | "guide";
@@ -534,6 +535,11 @@ function displayPace(secondsPerKm: number) {
   return `${Math.floor(secondsPerKm / 60)}:${String(secondsPerKm % 60).padStart(2, "0")} min/km`;
 }
 
+function displayCoachUpdate(value: string) {
+  const date = new Date(value.includes("T") ? value : `${value.replace(" ", "T")}Z`);
+  return new Intl.DateTimeFormat("ca-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
 function routineLabel(id: RoutineId) {
   return id === "RUN" ? "Running lliure" : routines[id].label;
 }
@@ -614,8 +620,11 @@ export default function Home() {
   const [strengthFit, setStrengthFit] = useState<ImportedRun | null>(null);
   const [importingFit, setImportingFit] = useState<FitImportTarget | null>(null);
   const [coachText, setCoachText] = useState("");
+  const [coachFeedback, setCoachFeedback] = useState<CoachFeedback | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachConfigured, setCoachConfigured] = useState<boolean | null>(null);
+  const [coachUpdatedAt, setCoachUpdatedAt] = useState<string | null>(null);
+  const [coachError, setCoachError] = useState("");
   const workoutFormRef = useRef<HTMLElement>(null);
 
   async function loadSessions() {
@@ -640,6 +649,23 @@ export default function Home() {
       .finally(() => {
         if (active) setLoading(false);
       });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/coach")
+      .then(async (response) => {
+        const body = await response.json() as { feedback?: CoachFeedback | null; analysis?: string; configured?: boolean; createdAt?: string | null };
+        if (!active || !response.ok) return;
+        setCoachConfigured(Boolean(body.configured));
+        setCoachFeedback(body.feedback ?? null);
+        setCoachText(body.analysis ?? "");
+        setCoachUpdatedAt(body.createdAt ?? null);
+      })
+      .catch(() => undefined);
     return () => {
       active = false;
     };
@@ -732,17 +758,25 @@ export default function Home() {
     );
   }
 
-  async function askCoach() {
+  async function generateCoachFeedback(sessionId: number) {
     setCoachLoading(true);
-    setCoachText("");
+    setCoachError("");
     try {
-      const response = await fetch("/api/coach", { method: "POST" });
-      const body = await response.json() as { analysis?: string; configured?: boolean; error?: string };
+      const response = await fetch("/api/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      const body = await response.json() as { feedback?: CoachFeedback; analysis?: string; configured?: boolean; createdAt?: string; error?: string };
       setCoachConfigured(body.configured ?? response.ok);
-      if (!response.ok || !body.analysis) throw new Error(body.error ?? "No s’ha pogut generar la valoració.");
-      setCoachText(body.analysis);
+      if (!response.ok || !body.feedback) throw new Error(body.error ?? "No s’ha pogut generar la valoració.");
+      setCoachFeedback(body.feedback);
+      setCoachText("");
+      setCoachUpdatedAt(body.createdAt ?? new Date().toISOString());
+      return true;
     } catch (reason) {
-      setCoachText(reason instanceof Error ? reason.message : "No s’ha pogut generar la valoració.");
+      setCoachError(reason instanceof Error ? reason.message : "No s’ha pogut generar la valoració.");
+      return false;
     } finally {
       setCoachLoading(false);
     }
@@ -776,12 +810,21 @@ export default function Home() {
         }),
       });
       if (!response.ok) throw new Error("No s’ha pogut desar");
-      setMessage("Sessió desada. Bon entrenament!");
+      const saved = await response.json() as { session?: { id?: number } };
+      const sessionId = Number(saved.session?.id);
       setNotes("");
       setImportedRun(null);
       setWarmupRun(null);
       setStrengthFit(null);
       await loadSessions();
+      setSaving(false);
+      if (Number.isInteger(sessionId) && sessionId > 0) {
+        setMessage("Sessió desada. Gemini està actualitzant la valoració…");
+        const updated = await generateCoachFeedback(sessionId);
+        setMessage(updated ? "Sessió desada i valoració actualitzada." : "Sessió desada. Es manté l’última valoració disponible.");
+      } else {
+        setMessage("Sessió desada. Bon entrenament!");
+      }
     } catch {
       setMessage("No s’ha pogut desar la sessió. Torna-ho a provar.");
     } finally {
@@ -1064,8 +1107,26 @@ export default function Home() {
           </div>
 
           <div className="coach-card">
-            <div className="coach-heading"><div><span className="coach-mark">G</span><div><small>ENTRENADOR PERSONAL · GEMINI</small><h3>Valoració del teu progrés</h3></div></div><button type="button" onClick={askCoach} disabled={coachLoading}>{coachLoading ? "Analitzant…" : coachText ? "Actualitzar valoració" : "Analitzar la setmana"}</button></div>
-            {coachText ? <div className="coach-response">{coachText.split("\n").filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div> : <div className="coach-empty"><p>Gemini analitzarà les sessions, les càrregues, l’RPE, les dades FIT i els teus comentaris per donar-te una valoració personalitzada.</p>{coachConfigured === false && <small>Cal afegir la clau de Google AI Studio per activar-lo.</small>}</div>}
+            <div className="coach-heading"><div><span className="coach-mark">G</span><div><small>ENTRENADOR PERSONAL · GEMINI</small><h3>Valoració del teu progrés</h3></div></div><span className={coachLoading ? "coach-status loading" : "coach-status"}>{coachLoading ? "Actualitzant…" : coachUpdatedAt ? `Actualitzada ${displayCoachUpdate(coachUpdatedAt)}` : "Automàtica en desar"}</span></div>
+            {coachFeedback ? (
+              <div className="coach-feedback">
+                <section className="coach-session-feedback">
+                  <div className="coach-block-label"><span>ÚLTIMA SESSIÓ</span><small>Confiança {coachFeedback.confidence}</small></div>
+                  <p className="coach-verdict">{coachFeedback.session.verdict}</p>
+                  <div className="coach-reason"><small>PER QUÈ</small><p>{coachFeedback.session.evidence}</p></div>
+                  <div className="coach-next"><small>PRÒXIMA ACCIÓ</small><strong>{coachFeedback.session.nextAction}</strong></div>
+                </section>
+                <details className="coach-week-feedback">
+                  <summary><span><small>VISIÓ SETMANAL</small><strong>{coachFeedback.week.summary}</strong></span><ArrowIcon /></summary>
+                  <div className="coach-week-body">
+                    <div><small>PROGRÉS</small><p>{coachFeedback.week.progress}</p></div>
+                    <div><small>A VIGILAR</small><p>{coachFeedback.week.watch}</p></div>
+                    <div className="coach-week-next"><small>ACCIÓ SETMANAL</small><p>{coachFeedback.week.nextAction}</p></div>
+                  </div>
+                </details>
+              </div>
+            ) : coachText ? <div className="coach-response">{coachText.split("\n").filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div> : <div className="coach-empty"><p>Gemini generarà automàticament una valoració quan desis la pròxima sessió.</p>{coachConfigured === false && <small>Cal afegir la clau de Google AI Studio per activar-lo.</small>}</div>}
+            {coachError && <p className="coach-error">{coachError} L’entrenament s’ha desat correctament.</p>}
           </div>
 
           <button className="secondary-technique" type="button" onClick={() => setTab("guide")}>Consultar la guia de tècnica <ArrowIcon /></button>
